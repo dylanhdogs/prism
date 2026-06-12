@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Group — PRISM</title>
+  <link rel="stylesheet" href="/src/styles/app.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="app-sidebar">
+      <div class="sidebar-logo">
+        <img src="prism_logo_01.png" alt="PRISM">
+        <span>PRISM</span>
+      </div>
+      <nav>
+        <a href="/dashboard">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="1" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="10" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="10" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+          Dashboard
+        </a>
+        <a href="/dashboard" class="active">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l7 5v9H2V7l7-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          Group
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a id="logout-btn">Log out</a>
+      </div>
+    </aside>
+    <main class="app-main">
+      <header class="app-header">
+        <h2 id="group-title">Group</h2>
+        <div class="app-header-right">
+          <span class="user-name" id="user-name"></span>
+        </div>
+      </header>
+      <div class="app-content">
+        <div class="group-detail-header">
+          <div>
+            <h2 id="group-name"></h2>
+            <p id="group-meta" style="color:var(--gray-400);font-size:14px;"></p>
+          </div>
+          <div class="group-actions">
+            <button class="btn btn-primary btn-sm" onclick="showAddExpenseModal()">+ Add Expense</button>
+            <button class="btn btn-secondary btn-sm" onclick="showAddMemberModal()">+ Invite</button>
+          </div>
+        </div>
+
+        <div class="tab-bar" id="tab-bar">
+          <button class="active" data-tab="balances">Balances</button>
+          <button data-tab="expenses">Expenses</button>
+          <button data-tab="members">Members</button>
+          <button data-tab="settlements">Settlements</button>
+        </div>
+
+        <!-- Balances Tab -->
+        <div id="tab-balances" class="tab-content">
+          <div class="balance-summary" id="balance-summary"></div>
+          <div class="section-card">
+            <h3>Who owes what</h3>
+            <div id="debts-list"></div>
+          </div>
+          <div class="section-card">
+            <h3>Simplified settlements</h3>
+            <div id="simplified-list"></div>
+          </div>
+        </div>
+
+        <!-- Expenses Tab -->
+        <div id="tab-expenses" class="tab-content" style="display:none;">
+          <div class="section-card">
+            <div id="expenses-list" class="expenses-list"></div>
+          </div>
+        </div>
+
+        <!-- Members Tab -->
+        <div id="tab-members" class="tab-content" style="display:none;">
+          <div class="section-card">
+            <div id="members-list" class="members-list"></div>
+          </div>
+        </div>
+
+        <!-- Settlements Tab -->
+        <div id="tab-settlements" class="tab-content" style="display:none;">
+          <div class="section-card">
+            <div id="settlements-list"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Expense Modal -->
+  <div id="add-expense-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h2>Add expense</h2>
+      <form id="add-expense-form">
+        <div class="form-group">
+          <label for="expense-title">Title</label>
+          <input type="text" id="expense-title" placeholder="e.g. Dinner" required>
+        </div>
+        <div class="form-group">
+          <label for="expense-amount">Amount ($)</label>
+          <input type="number" id="expense-amount" step="0.01" min="0.01" placeholder="0.00" required>
+        </div>
+        <div class="form-group">
+          <label for="expense-date">Date</label>
+          <input type="date" id="expense-date" required>
+        </div>
+        <div class="form-group">
+          <label for="expense-payer">Paid by</label>
+          <select id="expense-payer" required></select>
+        </div>
+        <div class="form-group">
+          <label>Split between</label>
+          <div id="split-members" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+        </div>
+        <div id="add-expense-error" class="form-error" style="display:none;"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeAddExpenseModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="add-expense-btn">Add expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Member Modal -->
+  <div id="add-member-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h2>Invite member</h2>
+      <form id="add-member-form">
+        <div class="form-group">
+          <label for="member-email">Email address</label>
+          <input type="email" id="member-email" placeholder="friend@example.com" required>
+        </div>
+        <div id="add-member-error" class="form-error" style="display:none;"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeAddMemberModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="add-member-btn">Send invite</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getCurrentUser, logOut } from '/src/lib/auth.ts';
+    import { getGroupById, getGroupMembers, addGroupMember } from '/src/lib/groups.ts';
+    import { getGroupExpenses, createExpense } from '/src/lib/expenses.ts';
+    import { calculateGroupBalances } from '/src/lib/balances.ts';
+    import { getGroupSettlements, markSettlementPaid } from '/src/lib/settlements.ts';
+    import { getProfile } from '/src/lib/database.ts';
+
+    let groupId = '';
+    let currentUserId = '';
+    let members = [];
+
+    async function init() {
+      const result = await getCurrentUser();
+      if (result.error || !result.data) {
+        window.location.href = '/login';
+        return;
+      }
+      currentUserId = result.data.id;
+
+      try {
+        const profile = await getProfile(result.data.id);
+        document.getElementById('user-name').textContent = profile.full_name || profile.email;
+      } catch {}
+
+      const params = new URLSearchParams(window.location.search);
+      groupId = params.get('id') || '';
+      if (!groupId) {
+        document.getElementById('group-name').textContent = 'No group selected';
+        return;
+      }
+
+      await loadGroup();
+    }
+
+    async function loadGroup() {
+      try {
+        const group = await getGroupById(groupId);
+        document.getElementById('group-title').textContent = group.name;
+        document.getElementById('group-name').textContent = group.name;
+        document.getElementById('group-meta').textContent = group.description || 'Shared expenses group';
+
+        members = await getGroupMembers(groupId);
+        await loadBalances();
+        await loadExpenses();
+        await loadMembers();
+        await loadSettlements();
+      } catch (err) {
+        document.getElementById('group-name').textContent = 'Error loading group';
+        document.getElementById('group-meta').textContent = err.message;
+      }
+    }
+
+    async function loadBalances() {
+      try {
+        const { balances, debts, simplified } = await calculateGroupBalances(groupId);
+
+        let totalOwed = 0, totalOwe = 0;
+        const myMemberId = members.find(m => m.user_id === currentUserId)?.id || '';
+        const myBalance = balances.find(b => b.memberId === myMemberId);
+        if (myBalance) {
+          if (myBalance.netBalance > 0) totalOwed = myBalance.netBalance;
+          else totalOwe = Math.abs(myBalance.netBalance);
+        }
+
+        document.getElementById('balance-summary').innerHTML = `
+          <div class="balance-card">
+            <div class="label">You are owed</div>
+            <div class="value positive">$${totalOwed.toFixed(2)}</div>
+          </div>
+          <div class="balance-card">
+            <div class="label">You owe</div>
+            <div class="value negative">$${totalOwe.toFixed(2)}</div>
+          </div>
+        `;
+
+        const debtsEl = document.getElementById('debts-list');
+        if (debts.length === 0) {
+          debtsEl.innerHTML = '<p style="color:var(--gray-400);font-size:14px;">All settled up!</p>';
+        } else {
+          debtsEl.innerHTML = debts.map(d => `
+            <div class="settlement-row">
+              <span>${escapeHtml(d.fromName)} owes ${escapeHtml(d.toName)}</span>
+              <span class="amount">$${d.amount.toFixed(2)}</span>
+            </div>
+          `).join('');
+        }
+
+        const simplifiedEl = document.getElementById('simplified-list');
+        if (simplified.length === 0) {
+          simplifiedEl.innerHTML = '<p style="color:var(--gray-400);font-size:14px;">No settlements needed.</p>';
+        } else {
+          simplifiedEl.innerHTML = simplified.map(s => `
+            <div class="settlement-row">
+              <span>${escapeHtml(s.fromName)} pays ${escapeHtml(s.toName)}</span>
+              <span class="amount">$${s.amount.toFixed(2)} <button class="btn btn-sm btn-primary" onclick="settle('${s.fromMemberId}','${s.toMemberId}',${s.amount})">Settle up</button></span>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadExpenses() {
+      try {
+        const expenses = await getGroupExpenses(groupId);
+        const el = document.getElementById('expenses-list');
+        if (!expenses || expenses.length === 0) {
+          el.innerHTML = '<p style="color:var(--gray-400);font-size:14px;">No expenses yet. Add your first expense!</p>';
+          return;
+        }
+        el.innerHTML = expenses.map(e => `
+          <div class="expense-row">
+            <div class="expense-info">
+              <span class="expense-title">${escapeHtml(e.title)}</span>
+              <span class="expense-meta">Paid by ${e.paid_by?.display_name || 'Unknown'} on ${new Date(e.expense_date).toLocaleDateString()}</span>
+            </div>
+            <div class="expense-amount">$${Number(e.amount).toFixed(2)}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadMembers() {
+      const el = document.getElementById('members-list');
+      if (members.length === 0) { el.innerHTML = '<p style="color:var(--gray-400);">No members.</p>'; return; }
+      el.innerHTML = members.map(m => `
+        <div class="member-row">
+          <div class="member-info">
+            <div class="member-avatar">${(m.display_name || '?')[0].toUpperCase()}</div>
+            <div>
+              <div class="member-name">${escapeHtml(m.display_name || 'Invited')}</div>
+              <div class="member-role">${m.role}${m.user_id === currentUserId ? ' (you)' : ''}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function loadSettlements() {
+      try {
+        const settlements = await getGroupSettlements(groupId);
+        const el = document.getElementById('settlements-list');
+        if (!settlements || settlements.length === 0) {
+          el.innerHTML = '<p style="color:var(--gray-400);font-size:14px;">No settlements recorded.</p>';
+          return;
+        }
+        el.innerHTML = settlements.map(s => `
+          <div class="settlement-row">
+            <span>${escapeHtml(s.from_member?.display_name || 'Unknown')} paid ${escapeHtml(s.to_member?.display_name || 'Unknown')}</span>
+            <span class="amount">$${Number(s.amount).toFixed(2)}</span>
+          </div>
+        `).join('');
+      } catch (err) { console.error(err); }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ── Tab switching ──
+    document.getElementById('tab-bar')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-tab]');
+      if (!btn) return;
+      document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(el => { el.style.display = 'none'; });
+      const tab = document.getElementById('tab-' + btn.dataset.tab);
+      if (tab) tab.style.display = 'block';
+    });
+
+    // ── Add Expense Modal ──
+    window.showAddExpenseModal = function() {
+      document.getElementById('add-expense-modal').style.display = 'flex';
+      const payerSelect = document.getElementById('expense-payer');
+      const splitDiv = document.getElementById('split-members');
+      payerSelect.innerHTML = members.map(m => `<option value="${m.id}">${escapeHtml(m.display_name || 'Unknown')}</option>`).join('');
+      splitDiv.innerHTML = members.map(m => `
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" value="${m.id}" checked> ${escapeHtml(m.display_name || 'Unknown')}
+        </label>
+      `).join('');
+      document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
+    };
+    window.closeAddExpenseModal = function() {
+      document.getElementById('add-expense-modal').style.display = 'none';
+      document.getElementById('add-expense-error').style.display = 'none';
+    };
+
+    document.getElementById('add-expense-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('add-expense-btn');
+      const errorEl = document.getElementById('add-expense-error');
+      btn.disabled = true; btn.textContent = 'Adding...'; errorEl.style.display = 'none';
+
+      const title = document.getElementById('expense-title').value;
+      const amount = parseFloat(document.getElementById('expense-amount').value);
+      const expenseDate = document.getElementById('expense-date').value;
+      const paidByMemberId = document.getElementById('expense-payer').value;
+      const checkboxes = document.querySelectorAll('#split-members input[type="checkbox"]:checked');
+      const selectedMemberIds = Array.from(checkboxes).map(cb => cb.value);
+
+      if (selectedMemberIds.length === 0) {
+        errorEl.textContent = 'Select at least one person to split with.';
+        errorEl.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Add expense';
+        return;
+      }
+
+      try {
+        await createExpense({
+          groupId, paidByMemberId, title, amount, expenseDate, selectedMemberIds,
+        });
+        window.closeAddExpenseModal();
+        document.getElementById('add-expense-form').reset();
+        await loadExpenses();
+        await loadBalances();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+      } finally { btn.disabled = false; btn.textContent = 'Add expense'; }
+    });
+
+    // ── Add Member Modal ──
+    window.showAddMemberModal = function() {
+      document.getElementById('add-member-modal').style.display = 'flex';
+    };
+    window.closeAddMemberModal = function() {
+      document.getElementById('add-member-modal').style.display = 'none';
+      document.getElementById('add-member-error').style.display = 'none';
+    };
+
+    document.getElementById('add-member-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('add-member-btn');
+      const errorEl = document.getElementById('add-member-error');
+      btn.disabled = true; btn.textContent = 'Sending...'; errorEl.style.display = 'none';
+
+      const email = document.getElementById('member-email').value;
+
+      try {
+        await addGroupMember(groupId, email);
+        window.closeAddMemberModal();
+        document.getElementById('add-member-form').reset();
+        members = await getGroupMembers(groupId);
+        await loadMembers();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+      } finally { btn.disabled = false; btn.textContent = 'Send invite'; }
+    });
+
+    // ── Settle up ──
+    window.settle = async (fromMemberId, toMemberId, amount) => {
+      try {
+        await markSettlementPaid(groupId, fromMemberId, toMemberId, amount);
+        await loadBalances();
+        await loadSettlements();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    // ── Logout ──
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+      await logOut();
+      window.location.href = '/';
+    });
+
+    init();
+  </script>
+</body>
+</html>

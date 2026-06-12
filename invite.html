@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join Group — PRISM</title>
+  <link rel="stylesheet" href="/src/styles/app.css">
+</head>
+<body>
+  <div class="auth-page" style="min-height:100vh;">
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-header">
+          <a href="/" class="auth-logo">
+            <img src="prism_logo_01.png" alt="PRISM" width="40" height="40">
+            <span class="auth-logo-text">PRISM</span>
+          </a>
+          <h1>Group invitation</h1>
+          <p id="invite-status" style="font-size:14px;color:var(--gray-500);">Loading invitation...</p>
+        </div>
+        <div id="invite-actions" style="display:none;">
+          <button class="btn btn-primary btn-full" id="accept-invite-btn">Accept invitation</button>
+          <p class="auth-footer-text" style="margin-top:16px;border-top:none;padding-top:0;">
+            <a href="/dashboard">Go to dashboard</a>
+          </p>
+        </div>
+        <div id="invite-login-prompt" style="display:none;">
+          <p style="text-align:center;font-size:14px;color:var(--gray-500);margin-bottom:20px;">Please log in or sign up to accept this invitation.</p>
+          <a href="/login" class="btn btn-primary btn-full">Log in</a>
+          <p class="auth-footer-text">
+            Don't have an account? <a href="/signup">Sign up</a>
+          </p>
+        </div>
+        <div id="invite-error" class="form-error" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getCurrentUser } from '/src/lib/auth.ts';
+    import { getInviteByToken, acceptInvite } from '/src/lib/invites.ts';
+
+    async function init() {
+      const path = window.location.pathname;
+      const token = path.split('/invite/').filter(Boolean)[0];
+
+      if (!token) {
+        document.getElementById('invite-status').textContent = 'Invalid invite link.';
+        return;
+      }
+
+      const { data: user } = await getCurrentUser();
+
+      try {
+        const invite = await getInviteByToken(token);
+        document.getElementById('invite-status').textContent = `You've been invited to join "${invite.group?.name || 'a group'}"`;
+
+        if (user) {
+          document.getElementById('invite-actions').style.display = 'block';
+          document.getElementById('accept-invite-btn').addEventListener('click', async () => {
+            try {
+              const result = await acceptInvite(token);
+              if (result.alreadyMember) {
+                document.getElementById('invite-status').textContent = 'You are already a member of this group.';
+              } else {
+                document.getElementById('invite-status').textContent = 'You joined the group!';
+              }
+              document.getElementById('invite-actions').style.display = 'none';
+              setTimeout(() => { window.location.href = `/groups.html?id=${result.groupId}`; }, 1500);
+            } catch (err) {
+              document.getElementById('invite-error').textContent = err.message;
+              document.getElementById('invite-error').style.display = 'block';
+            }
+          });
+        } else {
+          document.getElementById('invite-status').textContent = `You've been invited to join "${invite.group?.name || 'a group'}"`;
+          document.getElementById('invite-login-prompt').style.display = 'block';
+          sessionStorage.setItem('pending_invite_token', token);
+        }
+      } catch (err) {
+        document.getElementById('invite-status').textContent = 'This invite is invalid or has expired.';
+        document.getElementById('invite-error').textContent = err.message;
+        document.getElementById('invite-error').style.display = 'block';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

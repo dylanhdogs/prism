@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up — PRISM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles/app.css">
+</head>
+<body class="auth-page">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <a href="/" class="auth-logo">
+          <img src="prism_logo_01.png" alt="PRISM" width="40" height="40">
+          <span class="auth-logo-text">PRISM</span>
+        </a>
+        <h1>Create your account</h1>
+        <p>Start tracking shared expenses with your group.</p>
+      </div>
+      <form id="signup-form" class="auth-form">
+        <div class="form-group">
+          <label for="full-name">Full name</label>
+          <input type="text" id="full-name" name="full-name" placeholder="Your name" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Create a password" required minlength="6" autocomplete="new-password">
+          <span class="form-hint">At least 6 characters</span>
+        </div>
+        <div id="signup-error" class="form-error" style="display:none"></div>
+        <button type="submit" class="btn btn-primary btn-full" id="signup-btn">Create account</button>
+      </form>
+      <p class="auth-footer-text">
+        Already have an account? <a href="/login">Log in</a>
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { signUp, getSession } from '/src/lib/auth.ts';
+    import { ensureProfile } from '/src/lib/database.ts';
+
+    getSession().then(({ data }) => {
+      if (data) window.location.href = '/dashboard';
+    });
+
+    document.getElementById('signup-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('signup-btn');
+      const errorEl = document.getElementById('signup-error');
+      if (!btn || !errorEl) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Creating account...';
+      errorEl.style.display = 'none';
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const fullName = document.getElementById('full-name').value;
+
+      const { data, error } = await signUp(email, password, fullName);
+      if (error) {
+        errorEl.textContent = error;
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Create account';
+        return;
+      }
+
+      if (data?.user) {
+        try {
+          await ensureProfile(data.user.id, email, fullName);
+        } catch (e) {}
+      }
+
+      if (data?.session) {
+        window.location.href = '/dashboard';
+      } else {
+        errorEl.textContent = 'Check your email for a confirmation link.';
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Create account';
+      }
+    });
+  </script>
+</body>
+</html>

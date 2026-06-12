@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log In — PRISM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles/app.css">
+</head>
+<body class="auth-page">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <a href="/" class="auth-logo">
+          <img src="prism_logo_01.png" alt="PRISM" width="40" height="40">
+          <span class="auth-logo-text">PRISM</span>
+        </a>
+        <h1>Welcome back</h1>
+        <p>Log in to manage your shared expenses.</p>
+      </div>
+      <form id="login-form" class="auth-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+        </div>
+        <div class="form-actions">
+          <a href="/forgot-password">Forgot password?</a>
+        </div>
+        <div id="login-error" class="form-error" style="display:none"></div>
+        <button type="submit" class="btn btn-primary btn-full" id="login-btn">Log in</button>
+      </form>
+      <p class="auth-footer-text">
+        Don't have an account? <a href="/signup">Sign up</a>
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { logIn, getSession } from '/src/lib/auth.ts';
+
+    getSession().then(({ data }) => {
+      if (data) window.location.href = '/dashboard';
+    });
+
+    document.getElementById('login-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = /** @type {HTMLButtonElement} */ (document.getElementById('login-btn'));
+      const errorEl = document.getElementById('login-error');
+      if (!btn || !errorEl) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Logging in...';
+      errorEl.style.display = 'none';
+
+      const email = /** @type {HTMLInputElement} */ (document.getElementById('email')).value;
+      const password = /** @type {HTMLInputElement} */ (document.getElementById('password')).value;
+
+      const { data, error } = await logIn(email, password);
+      if (error) {
+        errorEl.textContent = error;
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Log in';
+        return;
+      }
+
+      window.location.href = '/dashboard';
+    });
+  </script>
+</body>
+</html>

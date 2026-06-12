@@ -1,0 +1,16 @@
+# ─────────────────────────────────────────────
+# Cloudflare Pages — Redirects & SPA Routing
+# ─────────────────────────────────────────────
+# Clean URLs: /login serves login.html, etc.
+# ─────────────────────────────────────────────
+
+/login /login.html 200
+/signup /signup.html 200
+/forgot-password /forgot-password.html 200
+/update-password /update-password.html 200
+/dashboard /dashboard.html 200
+/groups /groups.html 200
+/invite/* /invite.html 200
+
+# All other unmatched routes -> landing page
+/* /index.html 200

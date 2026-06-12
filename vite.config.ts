@@ -1,0 +1,30 @@
+import { defineConfig } from 'vite';
+import { resolve } from 'path';
+
+export default defineConfig({
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+    },
+  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        login: resolve(__dirname, 'login.html'),
+        signup: resolve(__dirname, 'signup.html'),
+        'forgot-password': resolve(__dirname, 'forgot-password.html'),
+        dashboard: resolve(__dirname, 'dashboard.html'),
+        groups: resolve(__dirname, 'groups.html'),
+        invite: resolve(__dirname, 'invite.html'),
+        'update-password': resolve(__dirname, 'update-password.html'),
+      },
+    },
+  },
+  server: {
+    port: 3000,
+    open: false,
+  },
+});
