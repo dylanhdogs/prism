@@ -197,6 +197,8 @@ All commands work in PowerShell, CMD, and Git Bash on Windows.
 
 ## Cloudflare Pages Deployment
 
+Deployments are expected to run from the `master` branch. If Cloudflare does not start a new build after a push, check the Pages project branch setting and GitHub integration webhook.
+
 ### 1. Connect your GitHub repository
 
 1. Go to **Cloudflare Dashboard → Pages**.
