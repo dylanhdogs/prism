@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "prism",
+  "main": "worker.ts",
   "compatibility_date": "2026-06-12",
   "observability": {
     "enabled": true
