@@ -1,9 +1,8 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from './database.types';
 
-let client: SupabaseClient<Database> | null = null;
+let client: SupabaseClient | null = null;
 
-export function getSupabaseClient(): SupabaseClient<Database> {
+export function getSupabaseClient(): SupabaseClient {
   if (client) return client;
 
   const url = import.meta.env.VITE_SUPABASE_URL;
@@ -16,7 +15,7 @@ export function getSupabaseClient(): SupabaseClient<Database> {
     );
   }
 
-  client = createClient<Database>(url, anonKey, {
+  client = createClient(url, anonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,

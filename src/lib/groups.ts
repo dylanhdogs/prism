@@ -40,7 +40,7 @@ export async function getUserGroups() {
 
   if (error) throw new Error(error.message);
   if (!data) return [];
-  return data.map((m) => m.groups).filter(Boolean) as Group[];
+  return data.map((m) => m.groups).filter(Boolean) as unknown as Group[];
 }
 
 export async function getGroupById(groupId: string) {

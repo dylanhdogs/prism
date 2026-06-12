@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Join Group — PRISM</title>
+  <title>Guest Invitation — PRISM</title>
   <link rel="stylesheet" href="/src/styles/app.css">
 </head>
 <body>
@@ -15,84 +15,97 @@
             <img src="prism_logo_01.png" alt="PRISM" width="40" height="40">
             <span class="auth-logo-text">PRISM</span>
           </a>
-          <h1>Group invitation</h1>
+          <h1>Guest invitation</h1>
           <p id="invite-status" style="font-size:14px;color:var(--gray-500);">Loading invitation...</p>
         </div>
-        <div id="invite-actions" style="display:none;">
-          <button class="btn btn-primary btn-full" id="accept-invite-btn">Accept invitation</button>
-          <p class="auth-footer-text" style="margin-top:16px;border-top:none;padding-top:0;">
-            <a href="/dashboard">Go to dashboard</a>
-          </p>
+
+        <form id="guest-name-form" style="display:none;">
+          <div class="form-group">
+            <label for="guest-name-input">Your name</label>
+            <input type="text" id="guest-name-input" placeholder="Enter your name" maxlength="80" required>
+          </div>
+          <button class="btn btn-primary btn-full" id="guest-name-btn" type="submit">Enter group</button>
+        </form>
+
+        <div id="active-actions" style="display:none;">
+          <a href="/guest" class="btn btn-primary btn-full">Open guest view</a>
         </div>
-        <div id="invite-login-prompt" style="display:none;">
-          <p style="text-align:center;font-size:14px;color:var(--gray-500);margin-bottom:20px;">Please log in or sign up to accept this invitation.</p>
-          <a href="/login" class="btn btn-primary btn-full">Log in</a>
-          <p class="auth-footer-text">
-            Don't have an account? <a href="/signup">Sign up</a>
-          </p>
-        </div>
+
         <div id="invite-error" class="form-error" style="display:none;"></div>
       </div>
     </div>
   </div>
 
   <script type="module">
-    import { getCurrentUser } from '/src/lib/auth.ts';
-    import { getInviteByToken, acceptInvite } from '/src/lib/invites.ts';
+    import { createGuestSession, openGuestInvite } from '/src/lib/guest.ts';
+
+    let inviteToken = '';
+
+    function getToken() {
+      const params = new URLSearchParams(window.location.search);
+      const queryToken = params.get('token');
+      if (queryToken) return queryToken;
+      return window.location.pathname.split('/invite/').filter(Boolean)[0] || '';
+    }
+
+    function showError(message) {
+      document.getElementById('invite-error').textContent = message;
+      document.getElementById('invite-error').style.display = 'block';
+    }
+
+    function showNameForm(data) {
+      document.getElementById('invite-status').textContent = `You've been invited to view "${data.groupName || 'a group'}". Enter your name for 24-hour read-only access.`;
+      document.getElementById('guest-name-form').style.display = 'block';
+      document.getElementById('guest-name-input').focus();
+    }
 
     async function init() {
       const statusEl = document.getElementById('invite-status');
       statusEl.innerHTML = '<div class="loading-state"><div class="spinner-lg"></div><span>Checking invite...</span></div>';
 
-      const params = new URLSearchParams(window.location.search);
-      let token = params.get('token');
-      if (!token) {
-        const path = window.location.pathname;
-        token = path.split('/invite/').filter(Boolean)[0];
-      }
-
-      if (!token) {
-        document.getElementById('invite-status').textContent = 'Invalid invite link.';
+      inviteToken = getToken();
+      if (!inviteToken) {
+        statusEl.textContent = 'Invalid invite link.';
         return;
       }
 
-      const { data: user } = await getCurrentUser();
-
       try {
-        const invite = await getInviteByToken(token);
-        document.getElementById('invite-status').textContent = `You've been invited to join "${invite.group?.name || 'a group'}"`;
-
-        if (user) {
-          document.getElementById('invite-actions').style.display = 'block';
-          document.getElementById('accept-invite-btn').addEventListener('click', async () => {
-            const btn = document.getElementById('accept-invite-btn');
-            btn.disabled = true; btn.textContent = 'Joining...';
-            try {
-              const result = await acceptInvite(token);
-              if (result.alreadyMember) {
-                document.getElementById('invite-status').textContent = 'You are already a member of this group.';
-              } else {
-                document.getElementById('invite-status').textContent = 'You joined the group!';
-              }
-              document.getElementById('invite-actions').style.display = 'none';
-              window.location.href = `/groups.html?id=${result.groupId}`;
-            } catch (err) {
-              btn.disabled = false; btn.textContent = 'Accept invitation';
-              document.getElementById('invite-error').textContent = err.message;
-              document.getElementById('invite-error').style.display = 'block';
-            }
-          });
-        } else {
-          document.getElementById('invite-status').textContent = `You've been invited to join "${invite.group?.name || 'a group'}"`;
-          document.getElementById('invite-login-prompt').style.display = 'block';
-          sessionStorage.setItem('pending_invite_token', token);
+        const data = await openGuestInvite(inviteToken);
+        if (data.status === 'active') {
+          window.location.href = '/guest';
+          return;
         }
+        if (data.status === 'needs_name') {
+          showNameForm(data);
+          return;
+        }
+        statusEl.textContent = 'This invite is no longer available.';
+        showError(data.message || 'This invite is invalid, expired, or already claimed.');
       } catch (err) {
-        document.getElementById('invite-status').textContent = 'This invite is invalid or has expired.';
-        document.getElementById('invite-error').textContent = err.message;
-        document.getElementById('invite-error').style.display = 'block';
+        statusEl.textContent = 'This invite is no longer available.';
+        showError(err.message || 'This invite is invalid, expired, or already claimed.');
       }
     }
+
+    document.getElementById('guest-name-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const btn = document.getElementById('guest-name-btn');
+      const errorEl = document.getElementById('invite-error');
+      const guestName = document.getElementById('guest-name-input').value.trim();
+
+      btn.disabled = true;
+      btn.classList.add('btn-loading');
+      errorEl.style.display = 'none';
+
+      try {
+        await createGuestSession(inviteToken, guestName);
+        window.location.href = '/guest';
+      } catch (err) {
+        btn.disabled = false;
+        btn.classList.remove('btn-loading');
+        showError(err.message || 'Unable to enter group.');
+      }
+    });
 
     init();
   </script>

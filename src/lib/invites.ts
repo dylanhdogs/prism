@@ -47,13 +47,14 @@ export async function getInviteByToken(token: string) {
     .rpc('get_invite_by_token', { invite_token: token })
     .single();
 
+  const invite = data as { status: string; expires_at: string; group_name: string | null };
   if (error) throw new Error('Invite not found or invalid.');
-  if (data.status !== 'pending') throw new Error('This invite has already been used.');
-  if (new Date(data.expires_at) < new Date()) throw new Error('This invite has expired.');
+  if (invite.status !== 'pending') throw new Error('This invite has already been used.');
+  if (new Date(invite.expires_at) < new Date()) throw new Error('This invite has expired.');
 
   return {
-    ...data,
-    group: { name: data.group_name },
+    ...invite,
+    group: { name: invite.group_name },
   };
 }
 
@@ -67,8 +68,9 @@ export async function acceptInvite(token: string) {
     .single();
 
   if (error) throw new Error(error.message);
+  const result = data as { group_id: string; already_member: boolean };
 
-  await logActivity(data.group_id, user.data.id, 'invite_accepted', {});
+  await logActivity(result.group_id, user.data.id, 'invite_accepted', {});
 
-  return { groupId: data.group_id, alreadyMember: data.already_member };
+  return { groupId: result.group_id, alreadyMember: result.already_member };
 }

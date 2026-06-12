@@ -33,8 +33,19 @@ export interface Database {
       };
       invitations: {
         Row: Invitation;
-        Insert: Omit<Invitation, 'id' | 'created_at' | 'invited_email' | 'status'> & { invited_email?: string | null; status?: string };
+        Insert: Omit<Invitation, 'id' | 'created_at' | 'invited_email' | 'status' | 'opened_at' | 'guest_session_expires_at' | 'guest_claim_token_hash'> & {
+          invited_email?: string | null;
+          status?: string;
+          opened_at?: string | null;
+          guest_session_expires_at?: string | null;
+          guest_claim_token_hash?: string | null;
+        };
         Update: Partial<Omit<Invitation, 'id'>>;
+      };
+      guest_sessions: {
+        Row: GuestSession;
+        Insert: Omit<GuestSession, 'id' | 'created_at' | 'last_seen_at' | 'revoked_at'> & { last_seen_at?: string | null; revoked_at?: string | null };
+        Update: Partial<Omit<GuestSession, 'id'>>;
       };
       activity_logs: {
         Row: ActivityLog;
@@ -120,7 +131,21 @@ export interface Invitation {
   token: string;
   status: string;
   expires_at: string;
+  opened_at: string | null;
+  guest_session_expires_at: string | null;
+  guest_claim_token_hash: string | null;
   created_at: string;
+}
+
+export interface GuestSession {
+  id: string;
+  invitation_id: string;
+  guest_name: string;
+  session_token_hash: string;
+  expires_at: string;
+  revoked_at: string | null;
+  created_at: string;
+  last_seen_at: string | null;
 }
 
 export interface ActivityLog {

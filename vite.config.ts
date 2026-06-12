@@ -20,6 +20,7 @@ export default defineConfig({
         dashboard: resolve(__dirname, 'dashboard.html'),
         groups: resolve(__dirname, 'groups.html'),
         invite: resolve(__dirname, 'invite.html'),
+        guest: resolve(__dirname, 'guest.html'),
         'update-password': resolve(__dirname, 'update-password.html'),
       },
     },
