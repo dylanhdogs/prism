@@ -81,7 +81,13 @@
       }
 
       if (data?.session) {
-        window.location.href = '/dashboard';
+        const pendingToken = sessionStorage.getItem('pending_invite_token');
+        if (pendingToken) {
+          sessionStorage.removeItem('pending_invite_token');
+          window.location.href = '/invite/' + pendingToken;
+        } else {
+          window.location.href = '/dashboard';
+        }
       } else {
         errorEl.textContent = 'Check your email for a confirmation link.';
         errorEl.style.display = 'block';

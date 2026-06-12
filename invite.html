@@ -43,8 +43,13 @@
     async function init() {
       const statusEl = document.getElementById('invite-status');
       statusEl.innerHTML = '<div class="loading-state"><div class="spinner-lg"></div><span>Checking invite...</span></div>';
-      const path = window.location.pathname;
-      const token = path.split('/invite/').filter(Boolean)[0];
+
+      const params = new URLSearchParams(window.location.search);
+      let token = params.get('token');
+      if (!token) {
+        const path = window.location.pathname;
+        token = path.split('/invite/').filter(Boolean)[0];
+      }
 
       if (!token) {
         document.getElementById('invite-status').textContent = 'Invalid invite link.';
@@ -60,6 +65,8 @@
         if (user) {
           document.getElementById('invite-actions').style.display = 'block';
           document.getElementById('accept-invite-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('accept-invite-btn');
+            btn.disabled = true; btn.textContent = 'Joining...';
             try {
               const result = await acceptInvite(token);
               if (result.alreadyMember) {
@@ -68,8 +75,9 @@
                 document.getElementById('invite-status').textContent = 'You joined the group!';
               }
               document.getElementById('invite-actions').style.display = 'none';
-              setTimeout(() => { window.location.href = `/groups.html?id=${result.groupId}`; }, 1500);
+              window.location.href = `/groups.html?id=${result.groupId}`;
             } catch (err) {
+              btn.disabled = false; btn.textContent = 'Accept invitation';
               document.getElementById('invite-error').textContent = err.message;
               document.getElementById('invite-error').style.display = 'block';
             }

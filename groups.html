@@ -157,6 +157,20 @@
           <button type="submit" class="btn btn-primary" id="add-member-btn">Send invite</button>
         </div>
       </form>
+      <div id="invite-success" style="display:none;">
+        <p style="font-size:14px;color:var(--gray-600);margin-bottom:16px;">
+          Share this link with <strong id="invited-email-display"></strong>:
+        </p>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="invite-link-input" readonly
+            style="flex:1;font-family:inherit;font-size:13px;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:10px;background:var(--gray-50);color:var(--gray-900);">
+          <button type="button" class="btn btn-primary btn-sm" id="copy-invite-btn">Copy</button>
+        </div>
+        <p id="copy-feedback" style="font-size:12px;color:#10b981;margin-top:8px;display:none;">Copied!</p>
+        <div class="modal-actions" style="margin-top:20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeAddMemberModal()">Done</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -166,6 +180,7 @@
     import { getGroupExpenses, createExpense } from '/src/lib/expenses.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
     import { getGroupSettlements, markSettlementPaid } from '/src/lib/settlements.ts';
+    import { createInvite } from '/src/lib/invites.ts';
     import { getProfile } from '/src/lib/database.ts';
 
     let groupId = '';
@@ -422,10 +437,13 @@
     // ── Add Member Modal ──
     window.showAddMemberModal = function() {
       document.getElementById('add-member-modal').style.display = 'flex';
+      document.getElementById('add-member-form').style.display = 'block';
+      document.getElementById('invite-success').style.display = 'none';
+      document.getElementById('add-member-error').style.display = 'none';
+      document.getElementById('add-member-form').reset();
     };
     window.closeAddMemberModal = function() {
       document.getElementById('add-member-modal').style.display = 'none';
-      document.getElementById('add-member-error').style.display = 'none';
     };
 
     document.getElementById('add-member-form')?.addEventListener('submit', async (e) => {
@@ -438,15 +456,31 @@
       const email = document.getElementById('member-email').value;
 
       try {
-        await addGroupMember(groupId, email);
-        window.closeAddMemberModal();
-        document.getElementById('add-member-form').reset();
+        const invite = await createInvite(groupId, email);
+        document.getElementById('add-member-form').style.display = 'none';
+        document.getElementById('invite-success').style.display = 'block';
+        document.getElementById('invited-email-display').textContent = email;
+        document.getElementById('invite-link-input').value = invite.inviteLink;
         members = await getGroupMembers(groupId);
         await loadMembers();
       } catch (err) {
         errorEl.textContent = err.message;
         errorEl.style.display = 'block';
       } finally { btn.disabled = false; btn.classList.remove('btn-loading'); }
+    });
+
+    document.getElementById('copy-invite-btn')?.addEventListener('click', async () => {
+      const input = document.getElementById('invite-link-input');
+      try {
+        await navigator.clipboard.writeText(input.value);
+        document.getElementById('copy-feedback').style.display = 'block';
+        setTimeout(() => { document.getElementById('copy-feedback').style.display = 'none'; }, 2000);
+      } catch {
+        input.select();
+        document.execCommand('copy');
+        document.getElementById('copy-feedback').style.display = 'block';
+        setTimeout(() => { document.getElementById('copy-feedback').style.display = 'none'; }, 2000);
+      }
     });
 
     // ── Settle up ──
