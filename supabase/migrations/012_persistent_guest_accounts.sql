@@ -6,6 +6,33 @@ ALTER TABLE public.guest_sessions
 
 CREATE INDEX IF NOT EXISTS idx_guest_sessions_group_member_id ON public.guest_sessions(group_member_id);
 
+DO $$
+DECLARE
+  v_session RECORD;
+  v_group_member_id UUID;
+BEGIN
+  FOR v_session IN
+    SELECT
+      guest_sessions.id AS guest_session_id,
+      guest_sessions.guest_name,
+      invitations.group_id,
+      invitations.invited_email
+    FROM public.guest_sessions
+    JOIN public.invitations ON invitations.id = guest_sessions.invitation_id
+    WHERE guest_sessions.group_member_id IS NULL
+      AND guest_sessions.revoked_at IS NULL
+  LOOP
+    INSERT INTO public.group_members (group_id, user_id, invited_email, display_name, role, status)
+    VALUES (v_session.group_id, null, v_session.invited_email, v_session.guest_name, 'member', 'active')
+    RETURNING id INTO v_group_member_id;
+
+    UPDATE public.guest_sessions
+    SET group_member_id = v_group_member_id
+    WHERE id = v_session.guest_session_id;
+  END LOOP;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.open_guest_invite(invite_token TEXT, claim_token_hash TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -39,12 +66,6 @@ BEGIN
     IF v_invite.guest_claim_token_hash IS DISTINCT FROM claim_token_hash THEN
       RETURN jsonb_build_object('status', 'claimed', 'message', 'This invite link has already been claimed.');
     END IF;
-
-    UPDATE public.guest_sessions
-    SET session_token_hash = claim_guest_invite.session_token_hash,
-        last_seen_at = now()
-    WHERE id = v_existing_session.id
-    RETURNING * INTO v_existing_session;
 
     RETURN jsonb_build_object(
       'status', 'active',
@@ -102,6 +123,7 @@ DECLARE
   v_name TEXT := trim(guest_name);
   v_existing_session public.guest_sessions%ROWTYPE;
   v_group_member_id UUID;
+  v_existing_group_member_id UUID;
   v_session_expires_at TIMESTAMPTZ := now() + interval '10 years';
 BEGIN
   IF length(v_name) = 0 OR length(v_name) > 80 THEN
@@ -115,6 +137,15 @@ BEGIN
 
   SELECT name INTO v_group_name FROM public.groups WHERE id = v_invite.group_id;
 
+  IF v_invite.opened_at IS NULL THEN
+    UPDATE public.invitations
+    SET opened_at = now(),
+        guest_session_expires_at = v_invite.expires_at,
+        guest_claim_token_hash = claim_token_hash
+    WHERE id = v_invite.id
+    RETURNING * INTO v_invite;
+  END IF;
+
   SELECT * INTO v_existing_session
   FROM public.guest_sessions
   WHERE invitation_id = v_invite.id
@@ -126,6 +157,32 @@ BEGIN
     IF v_invite.guest_claim_token_hash IS DISTINCT FROM claim_token_hash THEN
       RETURN jsonb_build_object('status', 'claimed', 'message', 'This invite link has already been claimed.');
     END IF;
+
+    IF v_existing_session.group_member_id IS NULL THEN
+      SELECT id INTO v_existing_group_member_id
+      FROM public.group_members
+      WHERE group_id = v_invite.group_id
+        AND user_id IS NULL
+        AND status = 'active'
+        AND display_name = v_existing_session.guest_name
+      ORDER BY created_at ASC
+      LIMIT 1;
+
+      IF v_existing_group_member_id IS NULL THEN
+        INSERT INTO public.group_members (group_id, user_id, invited_email, display_name, role, status)
+        VALUES (v_invite.group_id, null, v_invite.invited_email, v_existing_session.guest_name, 'member', 'active')
+        RETURNING id INTO v_existing_group_member_id;
+      END IF;
+    ELSE
+      v_existing_group_member_id := v_existing_session.group_member_id;
+    END IF;
+
+    UPDATE public.guest_sessions
+    SET session_token_hash = claim_guest_invite.session_token_hash,
+        group_member_id = v_existing_group_member_id,
+        last_seen_at = now()
+    WHERE id = v_existing_session.id
+    RETURNING * INTO v_existing_session;
 
     RETURN jsonb_build_object(
       'status', 'active',
@@ -265,3 +322,7 @@ BEGIN
   );
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION public.open_guest_invite(TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_guest_invite(TEXT, TEXT, TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_guest_group(TEXT) TO anon, authenticated;

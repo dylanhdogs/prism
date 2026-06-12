@@ -177,9 +177,28 @@
     </div>
   </div>
 
+  <!-- Edit Member Modal -->
+  <div id="edit-member-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h2>Edit member</h2>
+      <form id="edit-member-form">
+        <input type="hidden" id="edit-member-id">
+        <div class="form-group">
+          <label for="edit-member-name">Display name</label>
+          <input type="text" id="edit-member-name" maxlength="80" required>
+        </div>
+        <div id="edit-member-error" class="form-error" style="display:none;"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeEditMemberModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="edit-member-save-btn">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
     import { getPageAuthState, logOut } from '/src/lib/auth.ts';
-    import { getGroupById, getGroupMembers } from '/src/lib/groups.ts';
+    import { getGroupById, getGroupMembers, removeGroupMember, updateGroupMemberName } from '/src/lib/groups.ts';
     import { getGroupExpenses, createExpense } from '/src/lib/expenses.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
     import { getGroupSettlements, markSettlementPaid } from '/src/lib/settlements.ts';
@@ -333,15 +352,22 @@
         document.getElementById('members-content').style.display = 'block';
         const el = document.getElementById('members-list');
         if (members.length === 0) { el.innerHTML = '<p style="color:var(--gray-400);">No members.</p>'; return; }
+        const canManage = canManageMembers();
         el.innerHTML = members.map(m => `
           <div class="member-row">
             <div class="member-info">
-              <div class="member-avatar">${(m.display_name || '?')[0].toUpperCase()}</div>
+              <div class="member-avatar">${escapeHtml((m.display_name || '?')[0].toUpperCase())}</div>
               <div>
                 <div class="member-name">${escapeHtml(m.display_name || 'Invited')}</div>
-                <div class="member-role">${m.role}${m.user_id === currentUserId ? ' (you)' : ''}</div>
+                <div class="member-role">${escapeHtml(m.role)}${m.user_id === currentUserId ? ' (you)' : ''}</div>
               </div>
             </div>
+            ${canManage ? `
+              <div class="member-actions">
+                <button type="button" class="btn btn-secondary btn-sm" data-member-action="edit" data-member-id="${m.id}">Edit</button>
+                <button type="button" class="btn btn-danger btn-sm" data-member-action="remove" data-member-id="${m.id}">Remove</button>
+              </div>
+            ` : ''}
           </div>
         `).join('');
       } catch (err) {
@@ -349,6 +375,18 @@
         document.getElementById('members-content').style.display = 'block';
         document.getElementById('members-list').innerHTML = '<div class="form-error">Error loading members</div>';
       }
+    }
+
+    async function refreshMembers() {
+      members = await getGroupMembers(groupId);
+      await loadMembers();
+    }
+
+    async function refreshGroupData() {
+      await refreshMembers();
+      await loadBalances();
+      await loadExpenses();
+      await loadSettlements();
     }
 
     async function loadSettlements() {
@@ -389,6 +427,10 @@
         || settlement.toMemberId === currentMemberId;
     }
 
+    function canManageMembers() {
+      return ['owner', 'admin'].includes(currentUserRole);
+    }
+
     // ── Tab switching ──
     document.getElementById('tab-bar')?.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-tab]');
@@ -398,9 +440,89 @@
       document.querySelectorAll('.tab-content').forEach(el => { el.style.display = 'none'; });
       const tab = document.getElementById('tab-' + btn.dataset.tab);
       if (tab) tab.style.display = 'block';
+      if (btn.dataset.tab === 'members' && groupId) {
+        refreshMembers().catch(console.error);
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      const membersTab = document.querySelector('[data-tab="members"].active');
+      if (!document.hidden && membersTab && groupId) {
+        refreshMembers().catch(console.error);
+      }
     });
 
     // ── Add Expense Modal ──
+    window.closeEditMemberModal = function() {
+      document.getElementById('edit-member-modal').style.display = 'none';
+      document.getElementById('edit-member-error').style.display = 'none';
+      document.getElementById('edit-member-form').reset();
+    };
+
+    function showEditMemberModal(member) {
+      document.getElementById('edit-member-id').value = member.id;
+      document.getElementById('edit-member-name').value = member.display_name || '';
+      document.getElementById('edit-member-error').style.display = 'none';
+      document.getElementById('edit-member-modal').style.display = 'flex';
+      document.getElementById('edit-member-name').focus();
+    }
+
+    document.getElementById('members-list')?.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-member-action]');
+      if (!button) return;
+
+      const memberId = button.dataset.memberId;
+      const member = members.find(m => m.id === memberId);
+      if (!member) return;
+
+      if (button.dataset.memberAction === 'edit') {
+        showEditMemberModal(member);
+        return;
+      }
+
+      const memberName = member.display_name || 'this member';
+      const confirmed = window.confirm(`Remove ${memberName} from this group?`);
+      if (!confirmed) return;
+
+      button.disabled = true;
+      try {
+        await removeGroupMember(groupId, member.id);
+        if (member.user_id === currentUserId) {
+          window.location.href = '/dashboard';
+          return;
+        }
+        await refreshGroupData();
+      } catch (err) {
+        window.alert(err.message || 'Unable to remove member.');
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById('edit-member-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const btn = document.getElementById('edit-member-save-btn');
+      const errorEl = document.getElementById('edit-member-error');
+      const memberId = document.getElementById('edit-member-id').value;
+      const displayName = document.getElementById('edit-member-name').value.trim();
+
+      btn.disabled = true;
+      btn.classList.add('btn-loading');
+      errorEl.style.display = 'none';
+
+      try {
+        await updateGroupMemberName(groupId, memberId, displayName);
+        window.closeEditMemberModal();
+        await refreshGroupData();
+      } catch (err) {
+        errorEl.textContent = err.message || 'Unable to update member.';
+        errorEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('btn-loading');
+      }
+    });
+
     window.showAddExpenseModal = function() {
       document.getElementById('add-expense-modal').style.display = 'flex';
       const payerSelect = document.getElementById('expense-payer');

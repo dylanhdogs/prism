@@ -130,9 +130,58 @@ export async function addGroupMember(groupId: string, email: string, displayName
   return data as GroupMember;
 }
 
+export async function updateGroupMemberName(groupId: string, memberId: string, displayName: string) {
+  const supabase = getSupabaseClient();
+  const { user } = await requireGroupAdmin(groupId);
+  const nextName = displayName.trim();
+
+  if (!nextName || nextName.length > 80) {
+    throw new Error('Enter a member name between 1 and 80 characters.');
+  }
+
+  const { data, error } = await supabase
+    .from('group_members')
+    .update({ display_name: nextName })
+    .eq('id', memberId)
+    .eq('group_id', groupId)
+    .eq('status', 'active')
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  await logActivity(groupId, user.id, 'member_updated', { member_id: memberId, display_name: nextName });
+  return data as GroupMember;
+}
+
 export async function removeGroupMember(groupId: string, memberId: string) {
   const supabase = getSupabaseClient();
   const { user } = await requireGroupAdmin(groupId);
+
+  const { data: targetMember, error: targetError } = await supabase
+    .from('group_members')
+    .select('id, role')
+    .eq('id', memberId)
+    .eq('group_id', groupId)
+    .eq('status', 'active')
+    .single();
+
+  if (targetError || !targetMember) {
+    throw new Error('Member not found.');
+  }
+
+  if (targetMember.role === 'owner') {
+    const { count, error: countError } = await supabase
+      .from('group_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('group_id', groupId)
+      .eq('role', 'owner')
+      .eq('status', 'active');
+
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) <= 1) {
+      throw new Error('You cannot remove the only owner of this group.');
+    }
+  }
 
   const { error } = await supabase
     .from('group_members')
