@@ -12,5 +12,10 @@
   },
   "compatibility_flags": [
     "nodejs_compat"
-  ]
+  ],
+  "vars": {
+    "APP_URL": "https://prismbudgeting.com",
+    "SITE_URL": "https://prismbudgeting.com",
+    "RESEND_FROM_EMAIL": "Prism <noreply@prismbudgeting.com>"
+  }
 }

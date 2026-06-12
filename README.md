@@ -167,9 +167,11 @@ Prism now sends invite emails through [Resend](https://resend.com/), which is th
 
 1. Create a Resend account.
 2. Verify a sender email or domain.
-3. Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` in your `.env` file.
-4. Add the same variables to Cloudflare Pages for production.
-5. In the group invite dialog, enter an email address before creating the invite.
+3. Set `RESEND_API_KEY` in your local `.env` file for app development.
+4. Set `RESEND_API_KEY` in Cloudflare as a secret.
+5. Keep `RESEND_FROM_EMAIL` in `wrangler.jsonc` under `vars` so Cloudflare does not remove it as dashboard drift.
+6. For local worker testing with Wrangler, add `RESEND_API_KEY` to a local `.dev.vars` file.
+7. In the group invite dialog, enter an email address before creating the invite.
 
 The app still creates the shareable invite link, so you can copy it even if you choose not to email it.
 
