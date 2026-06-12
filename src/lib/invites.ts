@@ -2,6 +2,7 @@ import { getSupabaseClient } from './supabaseClient';
 import { getCurrentUser } from './auth';
 import { requireGroupAdmin } from './groups';
 import { logActivity } from './database';
+import type { Invitation } from './database.types';
 
 function generateToken(): string {
   const bytes = new Uint8Array(32);
@@ -80,6 +81,48 @@ export async function createInvite(groupId: string, invitedEmail?: string) {
     inviteLink: buildInviteLink(token),
     groupName,
   };
+}
+
+export function buildInviteUrl(token: string) {
+  return buildInviteLink(token);
+}
+
+export async function getGroupInvitations(groupId: string) {
+  const supabase = getSupabaseClient();
+  await requireGroupAdmin(groupId);
+
+  const { data, error } = await supabase
+    .from('invitations')
+    .select('*')
+    .eq('group_id', groupId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data || []) as Invitation[];
+}
+
+export async function cancelInvite(groupId: string, inviteId: string) {
+  const supabase = getSupabaseClient();
+  const { user } = await requireGroupAdmin(groupId);
+
+  const { data: invite, error: inviteError } = await supabase
+    .from('invitations')
+    .select('id, status')
+    .eq('id', inviteId)
+    .eq('group_id', groupId)
+    .single();
+
+  if (inviteError || !invite) throw new Error('Invite not found.');
+  if (invite.status !== 'pending') throw new Error('Only pending invites can be cancelled.');
+
+  const { error } = await supabase
+    .from('invitations')
+    .update({ status: 'cancelled' })
+    .eq('id', inviteId)
+    .eq('group_id', groupId);
+
+  if (error) throw new Error(error.message);
+  await logActivity(groupId, user.id, 'invite_cancelled', { invite_id: inviteId });
 }
 
 export async function getInviteByToken(token: string) {

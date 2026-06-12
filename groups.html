@@ -92,6 +92,10 @@
           <div class="section-card" id="members-content" style="display:none;">
             <div id="members-list" class="members-list"></div>
           </div>
+          <div class="section-card" id="invites-card" style="display:none;">
+            <h3>Pending invites</h3>
+            <div id="invites-list" class="members-list"></div>
+          </div>
         </div>
 
         <!-- Settlements Tab -->
@@ -202,7 +206,7 @@
     import { getGroupExpenses, createExpense } from '/src/lib/expenses.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
     import { getGroupSettlements, markSettlementPaid } from '/src/lib/settlements.ts';
-    import { createInvite, sendInviteEmail } from '/src/lib/invites.ts';
+    import { buildInviteUrl, cancelInvite, createInvite, getGroupInvitations, sendInviteEmail } from '/src/lib/invites.ts';
     import { getProfile } from '/src/lib/database.ts';
 
     let groupId = '';
@@ -210,6 +214,7 @@
     let currentMemberId = '';
     let currentUserRole = 'member';
     let members = [];
+    let invites = [];
     let currentInviteGroupName = '';
 
     async function init() {
@@ -245,6 +250,7 @@
         document.getElementById('group-title').textContent = group.name;
         document.getElementById('group-name').textContent = group.name;
         document.getElementById('group-meta').textContent = group.description || 'Shared expenses group';
+        currentInviteGroupName = group.name;
 
         members = await getGroupMembers(groupId);
         const currentMember = members.find(m => m.user_id === currentUserId);
@@ -254,6 +260,7 @@
         await loadBalances();
         await loadExpenses();
         await loadMembers();
+        await loadInvites();
         await loadSettlements();
       } catch (err) {
         document.getElementById('group-name').textContent = 'Error loading group';
@@ -384,9 +391,53 @@
 
     async function refreshGroupData() {
       await refreshMembers();
+      await loadInvites();
       await loadBalances();
       await loadExpenses();
       await loadSettlements();
+    }
+
+    async function loadInvites() {
+      const invitesCard = document.getElementById('invites-card');
+      const invitesList = document.getElementById('invites-list');
+      if (!['owner', 'admin'].includes(currentUserRole) || !groupId) {
+        invitesCard.style.display = 'none';
+        return;
+      }
+
+      invitesCard.style.display = 'block';
+      invitesList.innerHTML = '<p style="color:var(--gray-400);font-size:14px;">Loading invites...</p>';
+
+      try {
+        invites = await getGroupInvitations(groupId);
+        const pendingInvites = invites.filter(invite => invite.status === 'pending');
+        if (pendingInvites.length === 0) {
+          invitesList.innerHTML = '<p style="color:var(--gray-400);font-size:14px;">No pending invites.</p>';
+          return;
+        }
+
+        invitesList.innerHTML = pendingInvites.map(invite => `
+          <div class="member-row">
+            <div class="member-info">
+              <div class="member-avatar">#</div>
+              <div>
+                <div class="member-name">${escapeHtml(invite.invited_email || 'Shareable invite')}</div>
+                <div class="member-role">Sent ${new Date(invite.created_at).toLocaleDateString()}${invite.expires_at ? ` · Expires ${new Date(invite.expires_at).toLocaleDateString()}` : ''}</div>
+              </div>
+            </div>
+            <div class="member-actions">
+              ${invite.invited_email ? `
+                <button type="button" class="btn btn-secondary btn-sm" data-invite-action="resend" data-invite-id="${invite.id}" data-invite-token="${invite.token}" data-invite-email="${escapeHtml(invite.invited_email || '')}">Resend</button>
+              ` : `
+                <button type="button" class="btn btn-secondary btn-sm" data-invite-action="copy" data-invite-id="${invite.id}" data-invite-token="${invite.token}">Copy link</button>
+              `}
+              <button type="button" class="btn btn-danger btn-sm" data-invite-action="cancel" data-invite-id="${invite.id}">Cancel</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        invitesList.innerHTML = `<div class="form-error">${escapeHtml(err.message)}</div>`;
+      }
     }
 
     async function loadSettlements() {
@@ -441,14 +492,14 @@
       const tab = document.getElementById('tab-' + btn.dataset.tab);
       if (tab) tab.style.display = 'block';
       if (btn.dataset.tab === 'members' && groupId) {
-        refreshMembers().catch(console.error);
+        refreshGroupData().catch(console.error);
       }
     });
 
     document.addEventListener('visibilitychange', () => {
       const membersTab = document.querySelector('[data-tab="members"].active');
       if (!document.hidden && membersTab && groupId) {
-        refreshMembers().catch(console.error);
+        refreshGroupData().catch(console.error);
       }
     });
 
@@ -496,6 +547,65 @@
         window.alert(err.message || 'Unable to remove member.');
       } finally {
         button.disabled = false;
+      }
+    });
+
+    document.getElementById('invites-list')?.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-invite-action]');
+      if (!button) return;
+
+      const inviteId = button.dataset.inviteId;
+      const inviteToken = button.dataset.inviteToken;
+      const invite = invites.find(item => item.id === inviteId);
+      if (!invite) return;
+
+      if (button.dataset.inviteAction === 'copy') {
+        const inviteLink = buildInviteUrl(inviteToken);
+        try {
+          await navigator.clipboard.writeText(inviteLink);
+        } catch {
+          const temp = document.createElement('input');
+          temp.value = inviteLink;
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand('copy');
+          temp.remove();
+        }
+        window.alert('Invite link copied.');
+        return;
+      }
+
+      if (button.dataset.inviteAction === 'resend') {
+        if (!invite.invited_email) {
+          window.alert('This invite does not have an email address.');
+          return;
+        }
+
+        button.disabled = true;
+        try {
+          await sendInviteEmail(invite.invited_email, buildInviteUrl(invite.token), currentInviteGroupName);
+          window.alert(`Invite email sent to ${invite.invited_email}.`);
+        } catch (err) {
+          window.alert(err.message || 'Unable to resend invite.');
+        } finally {
+          button.disabled = false;
+        }
+        return;
+      }
+
+      if (button.dataset.inviteAction === 'cancel') {
+        const confirmed = window.confirm(`Cancel invite for ${invite.invited_email || 'this link'}?`);
+        if (!confirmed) return;
+
+        button.disabled = true;
+        try {
+          await cancelInvite(groupId, invite.id);
+          await loadInvites();
+        } catch (err) {
+          window.alert(err.message || 'Unable to cancel invite.');
+        } finally {
+          button.disabled = false;
+        }
       }
     });
 
@@ -635,6 +745,7 @@
           }
           statusEl.style.display = 'block';
         }
+        await loadInvites();
         members = await getGroupMembers(groupId);
         await loadMembers();
       } catch (err) {
