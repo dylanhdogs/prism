@@ -12,6 +12,3 @@
 /groups /groups.html 200
 /invite/* /invite.html 200
 /guest /guest.html 200
-
-# All other unmatched routes -> landing page
-/* /index.html 200
