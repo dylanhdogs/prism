@@ -1,0 +1,12 @@
+# Cloudflare Pages routing. Vite copies this file into dist/ during build.
+
+/login /login.html 200
+/signup /signup.html 200
+/forgot-password /forgot-password.html 200
+/update-password /update-password.html 200
+/dashboard /dashboard.html 200
+/groups /groups.html 200
+/invite/* /invite.html 200
+/guest /guest.html 200
+
+/* /index.html 200
