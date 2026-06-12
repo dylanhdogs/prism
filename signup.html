@@ -44,17 +44,28 @@
   </div>
 
   <script type="module">
-    import { signUp, getSession } from '/src/lib/auth.ts';
+    import { signUp, getPageAuthState, STALE_SESSION_MESSAGE } from '/src/lib/auth.ts';
     import { ensureProfile } from '/src/lib/database.ts';
 
-    getSession().then(({ data }) => {
-      if (data) window.location.href = '/dashboard';
+    const errorEl = document.getElementById('signup-error');
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('session') === 'expired' && errorEl) {
+      errorEl.textContent = STALE_SESSION_MESSAGE;
+      errorEl.style.display = 'block';
+      window.history.replaceState({}, '', '/signup');
+    }
+
+    getPageAuthState().then((auth) => {
+      if (auth.status === 'authenticated') window.location.href = '/dashboard';
+      if (auth.status === 'stale_session' && errorEl) {
+        errorEl.textContent = STALE_SESSION_MESSAGE;
+        errorEl.style.display = 'block';
+      }
     });
 
     document.getElementById('signup-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('signup-btn');
-      const errorEl = document.getElementById('signup-error');
       if (!btn || !errorEl) return;
 
       btn.disabled = true;

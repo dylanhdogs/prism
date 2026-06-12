@@ -42,16 +42,27 @@
   </div>
 
   <script type="module">
-    import { logIn, getSession } from '/src/lib/auth.ts';
+    import { logIn, getPageAuthState, STALE_SESSION_MESSAGE } from '/src/lib/auth.ts';
 
-    getSession().then(({ data }) => {
-      if (data) window.location.href = '/dashboard';
+    const errorEl = document.getElementById('login-error');
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('session') === 'expired' && errorEl) {
+      errorEl.textContent = STALE_SESSION_MESSAGE;
+      errorEl.style.display = 'block';
+      window.history.replaceState({}, '', '/login');
+    }
+
+    getPageAuthState().then((auth) => {
+      if (auth.status === 'authenticated') window.location.href = '/dashboard';
+      if (auth.status === 'stale_session' && errorEl) {
+        errorEl.textContent = STALE_SESSION_MESSAGE;
+        errorEl.style.display = 'block';
+      }
     });
 
     document.getElementById('login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = /** @type {HTMLButtonElement} */ (document.getElementById('login-btn'));
-      const errorEl = document.getElementById('login-error');
       if (!btn || !errorEl) return;
 
       btn.disabled = true;

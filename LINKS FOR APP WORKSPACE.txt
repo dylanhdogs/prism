@@ -1,0 +1,7 @@
+LINKS FOR APP WORKSPACE:
+
+1. https://dash.cloudflare.com/27021acadd3a58684cf73cb8419e8c83/workers/services/view/prism/production/deployments
+2. https://supabase.com/dashboard/project/nhbkoyotopebtoilcjhc/sql/ae8d2d91-91ad-4459-8d6a-dfbcd861fa6d?schema=public
+3. https://github.com/dylanhdogs/prism
+4. https://mail.google.com/mail/u/0/#inbox
+5. https://www.youtube.com/watch?v=ZqBFKDIOnHs&list=RDZqBFKDIOnHs&start_radio=1

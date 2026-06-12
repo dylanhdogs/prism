@@ -23,5 +23,5 @@ CREATE INDEX IF NOT EXISTS idx_guest_sessions_invitation_id ON public.guest_sess
 CREATE INDEX IF NOT EXISTS idx_guest_sessions_token_hash ON public.guest_sessions(session_token_hash);
 CREATE INDEX IF NOT EXISTS idx_guest_sessions_expires_at ON public.guest_sessions(expires_at);
 
--- Guest sessions are accessed only by server-side Cloudflare Functions with the
--- Supabase service role key. No client RLS policies are intentionally created.
+-- Guest sessions are accessed through SECURITY DEFINER RPC functions added in
+-- 010_guest_invite_rpc.sql. No client RLS policies are intentionally created.

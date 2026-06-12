@@ -29,7 +29,7 @@
 | Hosting | Cloudflare Pages |
 | Database | Supabase Postgres |
 | Auth | Supabase Auth (email/password) |
-| API | Supabase client (browser) + Cloudflare Pages Functions (optional) |
+| API | Supabase client (browser) + Supabase RPC functions |
 | Domain | prismbudgeting.com (via Cloudflare) |
 
 ---
@@ -92,14 +92,14 @@ In your Supabase project dashboard:
 1. Go to **Project Settings → API**.
 2. Copy the **Project URL** (looks like `https://xxxxx.supabase.co`).
 3. Copy the **anon public** key (starts with `eyJ...`).
-4. Optionally copy the **service_role** key for admin functions (keep this secret).
+4. You do not need the **service_role** key for the current app.
 
 Add these to your `.env` file:
 
 ```env
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # optional, keep secret
+VITE_APP_URL=http://localhost:3000
 ```
 
 ### 3. Run database migrations
@@ -107,13 +107,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # optional, keep secret
 In your Supabase dashboard:
 
 1. Go to **SQL Editor**.
-2. Open each migration file from `supabase/migrations/` in order:
-   - `001_profiles.sql`
-   - `002_groups.sql`
-   - `003_expenses.sql`
-   - `004_settlements.sql`
-   - `005_invitations.sql`
-   - `006_activity_logs.sql`
+2. Open each numbered migration file from `supabase/migrations/` in order.
 3. Copy the contents and paste into the SQL Editor.
 4. Click **Run**.
 5. Repeat for all migration files.
@@ -129,6 +123,7 @@ In your Supabase dashboard:
 3. Under **Authentication → Settings**:
    - Set **Site URL** to `http://localhost:3000` (for local dev)
    - Add `http://localhost:3000` to **Redirect URLs**
+   - Add `http://localhost:3000/confirm-account` to **Redirect URLs**
    - For production, add your Cloudflare Pages URL
 
 ---
@@ -139,13 +134,10 @@ In your Supabase dashboard:
 |----------|----------|------------|-------|
 | `VITE_SUPABASE_URL` | Yes | Frontend (client) | Public, starts with `https://` |
 | `VITE_SUPABASE_ANON_KEY` | Yes | Frontend (client) | Public anon key from Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | No | Cloudflare Functions | **Secret.** Never expose in client code. |
-| `APP_URL` | Yes | Auth redirects, invites | `http://localhost:3000` locally |
-| `SITE_URL` | Yes | Supabase Auth config | Same as APP_URL for local dev |
+| `VITE_APP_URL` | No | Auth redirects, invite links | Optional. If unset, the app uses the current browser origin. Set it when you want email links to use a specific domain. |
 
 ### Security rules
 
-- **Never** put `SUPABASE_SERVICE_ROLE_KEY` in frontend code.
 - **Never** commit `.env` to git. Only `.env.example` is committed.
 - The `VITE_` prefix makes Vite expose the variable to client code.
 
@@ -163,6 +155,11 @@ All migrations are in `supabase/migrations/`. Run them in order:
 | `004_settlements.sql` | Settlements (payments between members) + RLS |
 | `005_invitations.sql` | Invite links + RLS |
 | `006_activity_logs.sql` | Activity/audit log + RLS |
+| `007_fix_rls_recursion.sql` | Safe helper functions for RLS checks |
+| `008_pure_link_invites.sql` | Link-based invite acceptance RPC |
+| `009_guest_sessions.sql` | Guest session storage |
+| `010_guest_invite_rpc.sql` | Browser-callable guest invite RPC |
+| `011_security_hardening.sql` | Stricter member and payment permissions |
 
 Each file includes:
 - `CREATE TABLE` statements
@@ -247,8 +244,8 @@ To attach `prismbudgeting.com`:
 2. Click **Set up a custom domain**.
 3. Enter `prismbudgeting.com`.
 4. Follow Cloudflare's DNS configuration instructions.
-5. Update `APP_URL` and `SITE_URL` environment variables to `https://prismbudgeting.com`.
-6. Update Supabase Auth settings with the new domain.
+5. Update `VITE_APP_URL` to `https://prismbudgeting.com`.
+6. Update Supabase Auth settings and redirect URLs with the new domain, including `/confirm-account`.
 
 ---
 
@@ -330,7 +327,6 @@ prism/
 ## Security Notes
 
 - **Row Level Security** is enabled on all tables. Users cannot access data outside their groups.
-- **Service role key** should never be used in client-side code. It's only for Cloudflare Functions if needed.
 - **Environment variables** with `VITE_` prefix are exposed to client code. Do not put secrets there.
 - **Supabase anon key** is safe to expose — RLS policies are the actual security layer.
 - **Auth sessions** are managed by Supabase client — do not store auth tokens manually.

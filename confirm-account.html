@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Confirmed - PRISM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles/app.css">
+</head>
+<body class="auth-page">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <a href="/" class="auth-logo">
+          <img src="prism_logo_01.png" alt="PRISM" width="40" height="40">
+          <span class="auth-logo-text">PRISM</span>
+        </a>
+        <h1 id="confirm-title">Confirming your account</h1>
+        <p id="confirm-message">We are finishing your account confirmation now.</p>
+      </div>
+
+      <div id="confirm-loading" class="loading-state" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 0 20px;">
+        <div class="spinner-lg"></div>
+        <span>Finalizing sign-in...</span>
+      </div>
+
+      <div id="confirm-success" class="form-success" style="display:none;"></div>
+      <div id="confirm-error" class="form-error" style="display:none;"></div>
+
+      <div id="confirm-actions" style="display:none;">
+        <a href="/login" class="btn btn-primary btn-full">Go to log in</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getPageAuthState, onAuthStateChange, STALE_SESSION_MESSAGE } from '/src/lib/auth.ts';
+
+    const loadingEl = document.getElementById('confirm-loading');
+    const successEl = document.getElementById('confirm-success');
+    const errorEl = document.getElementById('confirm-error');
+    const actionsEl = document.getElementById('confirm-actions');
+    const titleEl = document.getElementById('confirm-title');
+    const messageEl = document.getElementById('confirm-message');
+
+    let hasContinued = false;
+    let unsubscribe = () => {};
+
+    function getNextPath() {
+      const pendingToken = sessionStorage.getItem('pending_invite_token');
+      if (pendingToken) {
+        sessionStorage.removeItem('pending_invite_token');
+        return '/invite.html?token=' + encodeURIComponent(pendingToken);
+      }
+      return '/dashboard';
+    }
+
+    function continueIntoApp() {
+      if (hasContinued) return;
+      hasContinued = true;
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'none';
+      actionsEl.style.display = 'none';
+      titleEl.textContent = 'Account confirmed';
+      messageEl.textContent = 'Your email has been confirmed successfully.';
+      successEl.textContent = 'Taking you to the next step...';
+      successEl.style.display = 'block';
+
+      window.setTimeout(() => {
+        window.location.href = getNextPath();
+      }, 1200);
+    }
+
+    function showLoginFallback() {
+      if (hasContinued) return;
+      loadingEl.style.display = 'none';
+      successEl.style.display = 'none';
+      titleEl.textContent = 'Account confirmed';
+      messageEl.textContent = 'Your account is ready.';
+      errorEl.textContent = 'Please log in to continue.';
+      errorEl.style.display = 'block';
+      actionsEl.style.display = 'block';
+    }
+
+    async function continueIfAuthenticated() {
+      const auth = await getPageAuthState();
+      if (auth.status === 'authenticated') {
+        unsubscribe();
+        continueIntoApp();
+        return;
+      }
+      if (auth.status === 'stale_session') {
+        unsubscribe();
+        showLoginFallback();
+        errorEl.textContent = STALE_SESSION_MESSAGE;
+      }
+    }
+
+    unsubscribe = onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        continueIfAuthenticated();
+      }
+    });
+
+    continueIfAuthenticated().then(() => {
+      if (hasContinued) return;
+
+      window.setTimeout(() => {
+        unsubscribe();
+        showLoginFallback();
+      }, 3000);
+    }).catch(() => {
+      unsubscribe();
+      showLoginFallback();
+    });
+  </script>
+</body>
+</html>

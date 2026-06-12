@@ -71,28 +71,33 @@
   </div>
 
   <script type="module">
-    import { getCurrentUser, logOut, onAuthStateChange } from '/src/lib/auth.ts';
+    import { getPageAuthState, logOut, onAuthStateChange } from '/src/lib/auth.ts';
     import { getUserGroups, getGroupMembers, createGroup } from '/src/lib/groups.ts';
     import { getProfile } from '/src/lib/database.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
 
     let currentUserId = '';
+    let initialAuthCheck = true;
 
     async function init() {
       try {
-        const result = await getCurrentUser();
-        if (result.error || !result.data) {
+        const auth = await getPageAuthState();
+        if (auth.status === 'signed_out') {
           window.location.href = '/login';
           return;
         }
+        if (auth.status === 'stale_session') {
+          window.location.href = '/login?session=expired';
+          return;
+        }
 
-        currentUserId = result.data.id;
+        currentUserId = auth.user.id;
 
         try {
-          const profile = await getProfile(result.data.id);
+          const profile = await getProfile(auth.user.id);
           document.getElementById('user-name').textContent = profile.full_name || profile.email;
         } catch {
-          document.getElementById('user-name').textContent = result.data.email || 'User';
+          document.getElementById('user-name').textContent = auth.user.email || 'User';
         }
 
         await loadGroups();
@@ -100,6 +105,8 @@
         const loadingState = document.getElementById('groups-loading');
         if (loadingState) loadingState.style.display = 'none';
         console.error('Dashboard init error:', err);
+      } finally {
+        initialAuthCheck = false;
       }
     }
 
@@ -214,7 +221,7 @@
 
     // ── Auth state listener ──
     onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT' && !initialAuthCheck && currentUserId) {
         window.location.href = '/';
       }
     });

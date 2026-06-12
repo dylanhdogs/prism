@@ -3,6 +3,26 @@ import { getCurrentUser } from './auth';
 import { logActivity } from './database';
 import type { Group, GroupMember } from './database.types';
 
+export async function requireGroupAdmin(groupId: string) {
+  const supabase = getSupabaseClient();
+  const user = await getCurrentUser();
+  if (!user.data) throw new Error('Not authenticated.');
+
+  const { data: membership, error } = await supabase
+    .from('group_members')
+    .select('id, role')
+    .eq('group_id', groupId)
+    .eq('user_id', user.data.id)
+    .eq('status', 'active')
+    .single();
+
+  if (error || !membership || !['owner', 'admin'].includes(membership.role)) {
+    throw new Error('Only group owners and admins can do that.');
+  }
+
+  return { user: user.data, membership };
+}
+
 export async function createGroup(name: string, description?: string) {
   const supabase = getSupabaseClient();
   const user = await getCurrentUser();
@@ -84,27 +104,7 @@ export async function getGroupMembers(groupId: string) {
 
 export async function addGroupMember(groupId: string, email: string, displayName?: string) {
   const supabase = getSupabaseClient();
-  const user = await getCurrentUser();
-  if (!user.data) throw new Error('Not authenticated.');
-
-  const { data: existingMember } = await supabase
-    .from('group_members')
-    .select('id')
-    .eq('group_id', groupId)
-    .eq('user_id', user.data.id)
-    .single();
-
-  if (!existingMember) {
-    const { data: ownerCheck } = await supabase
-      .from('group_members')
-      .select('role')
-      .eq('group_id', groupId)
-      .eq('user_id', user.data.id)
-      .single();
-    if (!ownerCheck || ownerCheck.role === 'member') {
-      throw new Error('Only group owners can add members.');
-    }
-  }
+  const { user } = await requireGroupAdmin(groupId);
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -126,25 +126,13 @@ export async function addGroupMember(groupId: string, email: string, displayName
     .single();
 
   if (error) throw new Error(error.message);
-  await logActivity(groupId, user.data.id, 'member_added', { email, name: displayName });
+  await logActivity(groupId, user.id, 'member_added', { email, name: displayName });
   return data as GroupMember;
 }
 
 export async function removeGroupMember(groupId: string, memberId: string) {
   const supabase = getSupabaseClient();
-  const user = await getCurrentUser();
-  if (!user.data) throw new Error('Not authenticated.');
-
-  const { data: membership } = await supabase
-    .from('group_members')
-    .select('role')
-    .eq('group_id', groupId)
-    .eq('user_id', user.data.id)
-    .single();
-
-  if (!membership || (membership.role !== 'owner' && membership.role !== 'admin')) {
-    throw new Error('Only group owners can remove members.');
-  }
+  const { user } = await requireGroupAdmin(groupId);
 
   const { error } = await supabase
     .from('group_members')
@@ -153,5 +141,5 @@ export async function removeGroupMember(groupId: string, memberId: string) {
     .eq('group_id', groupId);
 
   if (error) throw new Error(error.message);
-  await logActivity(groupId, user.data.id, 'member_removed', { member_id: memberId });
+  await logActivity(groupId, user.id, 'member_removed', { member_id: memberId });
 }

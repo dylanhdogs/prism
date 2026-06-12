@@ -2,6 +2,12 @@ import { getSupabaseClient } from './supabaseClient';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
 
 export type AuthResult<T> = { data: T; error: null } | { data: null; error: string };
+export type PageAuthState =
+  | { status: 'authenticated'; user: User; session: Session }
+  | { status: 'signed_out'; user: null; session: null }
+  | { status: 'stale_session'; user: null; session: null };
+
+export const STALE_SESSION_MESSAGE = 'Your old session is no longer valid. Please log in again or create a new account.';
 
 function handleAuthError(error: AuthError | null): string | null {
   if (!error) return null;
@@ -23,11 +29,13 @@ function getAppOrigin(): string {
 
 export async function signUp(email: string, password: string, fullName?: string): Promise<AuthResult<{ user: User | null; session: Session | null }>> {
   const supabase = getSupabaseClient();
+  const emailRedirectTo = `${getAppOrigin()}/confirm-account`;
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: fullName },
+      emailRedirectTo,
     },
   });
 
@@ -65,6 +73,23 @@ export async function getSession(): Promise<AuthResult<Session>> {
   const { data, error } = await supabase.auth.getSession();
   if (error || !data.session) return { data: null, error: error?.message ?? 'No active session' };
   return { data: data.session, error: null };
+}
+
+export async function getPageAuthState(): Promise<PageAuthState> {
+  const supabase = getSupabaseClient();
+  const sessionResult = await supabase.auth.getSession();
+  const session = sessionResult.data.session;
+  if (sessionResult.error || !session) {
+    return { status: 'signed_out', user: null, session: null };
+  }
+
+  const userResult = await supabase.auth.getUser();
+  if (userResult.error || !userResult.data.user) {
+    await supabase.auth.signOut({ scope: 'local' });
+    return { status: 'stale_session', user: null, session: null };
+  }
+
+  return { status: 'authenticated', user: userResult.data.user, session };
 }
 
 export async function resetPassword(email: string): Promise<AuthResult<null>> {

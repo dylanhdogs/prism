@@ -1,5 +1,6 @@
 import { getSupabaseClient } from './supabaseClient';
 import { getCurrentUser } from './auth';
+import { requireGroupAdmin } from './groups';
 import { logActivity } from './database';
 
 function generateToken(): string {
@@ -20,8 +21,7 @@ function buildInviteLink(token: string): string {
 
 export async function createInvite(groupId: string) {
   const supabase = getSupabaseClient();
-  const user = await getCurrentUser();
-  if (!user.data) throw new Error('Not authenticated.');
+  const { user } = await requireGroupAdmin(groupId);
 
   const token = generateToken();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -30,7 +30,7 @@ export async function createInvite(groupId: string) {
     .from('invitations')
     .insert({
       group_id: groupId,
-      invited_by: user.data.id,
+      invited_by: user.id,
       token,
       expires_at: expiresAt,
     })
@@ -39,7 +39,7 @@ export async function createInvite(groupId: string) {
 
   if (error) throw new Error(error.message);
 
-  await logActivity(groupId, user.data.id, 'invite_created', { token });
+  await logActivity(groupId, user.id, 'invite_created', { token });
 
   return {
     invite: data,

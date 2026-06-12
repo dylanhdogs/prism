@@ -42,7 +42,7 @@
           </div>
           <div class="group-actions">
             <button class="btn btn-primary btn-sm" onclick="showAddExpenseModal()">+ Add Expense</button>
-            <button class="btn btn-secondary btn-sm" onclick="showAddMemberModal()">+ Invite</button>
+            <button class="btn btn-secondary btn-sm" id="invite-btn" onclick="showAddMemberModal()" style="display:none;">+ Invite</button>
           </div>
         </div>
 
@@ -166,7 +166,7 @@
   </div>
 
   <script type="module">
-    import { getCurrentUser, logOut } from '/src/lib/auth.ts';
+    import { getPageAuthState, logOut } from '/src/lib/auth.ts';
     import { getGroupById, getGroupMembers } from '/src/lib/groups.ts';
     import { getGroupExpenses, createExpense } from '/src/lib/expenses.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
@@ -176,18 +176,24 @@
 
     let groupId = '';
     let currentUserId = '';
+    let currentMemberId = '';
+    let currentUserRole = 'member';
     let members = [];
 
     async function init() {
-      const result = await getCurrentUser();
-      if (result.error || !result.data) {
+      const auth = await getPageAuthState();
+      if (auth.status === 'signed_out') {
         window.location.href = '/login';
         return;
       }
-      currentUserId = result.data.id;
+      if (auth.status === 'stale_session') {
+        window.location.href = '/login?session=expired';
+        return;
+      }
+      currentUserId = auth.user.id;
 
       try {
-        const profile = await getProfile(result.data.id);
+        const profile = await getProfile(auth.user.id);
         document.getElementById('user-name').textContent = profile.full_name || profile.email;
       } catch {}
 
@@ -209,6 +215,10 @@
         document.getElementById('group-meta').textContent = group.description || 'Shared expenses group';
 
         members = await getGroupMembers(groupId);
+        const currentMember = members.find(m => m.user_id === currentUserId);
+        currentMemberId = currentMember?.id || '';
+        currentUserRole = currentMember?.role || 'member';
+        document.getElementById('invite-btn').style.display = ['owner', 'admin'].includes(currentUserRole) ? 'inline-flex' : 'none';
         await loadBalances();
         await loadExpenses();
         await loadMembers();
@@ -228,8 +238,7 @@
         document.getElementById('balances-content').style.display = 'block';
 
         let totalOwed = 0, totalOwe = 0;
-        const myMemberId = members.find(m => m.user_id === currentUserId)?.id || '';
-        const myBalance = balances.find(b => b.memberId === myMemberId);
+        const myBalance = balances.find(b => b.memberId === currentMemberId);
         if (myBalance) {
           if (myBalance.netBalance > 0) totalOwed = myBalance.netBalance;
           else totalOwe = Math.abs(myBalance.netBalance);
@@ -265,7 +274,7 @@
           simplifiedEl.innerHTML = simplified.map(s => `
             <div class="settlement-row">
               <span>${escapeHtml(s.fromName)} pays ${escapeHtml(s.toName)}</span>
-              <span class="amount">$${s.amount.toFixed(2)} <button class="btn btn-sm btn-primary" onclick="settle('${s.fromMemberId}','${s.toMemberId}',${s.amount})">Settle up</button></span>
+              <span class="amount">$${s.amount.toFixed(2)} ${canSettle(s) ? `<button class="btn btn-sm btn-primary" onclick="settle('${s.fromMemberId}','${s.toMemberId}',${s.amount})">Settle up</button>` : ''}</span>
             </div>
           `).join('');
         }
@@ -359,6 +368,12 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    function canSettle(settlement) {
+      return ['owner', 'admin'].includes(currentUserRole)
+        || settlement.fromMemberId === currentMemberId
+        || settlement.toMemberId === currentMemberId;
     }
 
     // ── Tab switching ──
