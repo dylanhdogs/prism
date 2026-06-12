@@ -19,9 +19,42 @@ function buildInviteLink(token: string): string {
   return url.toString();
 }
 
-export async function createInvite(groupId: string) {
+async function getGroupName(groupId: string) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('groups')
+    .select('name')
+    .eq('id', groupId)
+    .single();
+
+  if (error || !data) throw new Error('Could not load the group name.');
+  return data.name;
+}
+
+export async function sendInviteEmail(recipientEmail: string, inviteLink: string, groupName: string) {
+  const response = await fetch('/api/send-invite', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      recipientEmail,
+      inviteLink,
+      groupName,
+    }),
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Invite emails are not available in the local dev server yet. The invite link was still created, so you can copy and share it.');
+    }
+    throw new Error(payload?.error || 'Unable to send the invite email.');
+  }
+}
+
+export async function createInvite(groupId: string, invitedEmail?: string) {
   const supabase = getSupabaseClient();
   const { user } = await requireGroupAdmin(groupId);
+  const groupName = await getGroupName(groupId);
 
   const token = generateToken();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -31,6 +64,7 @@ export async function createInvite(groupId: string) {
     .insert({
       group_id: groupId,
       invited_by: user.id,
+      invited_email: invitedEmail?.trim() || null,
       token,
       expires_at: expiresAt,
     })
@@ -44,6 +78,7 @@ export async function createInvite(groupId: string) {
   return {
     invite: data,
     inviteLink: buildInviteLink(token),
+    groupName,
   };
 }
 

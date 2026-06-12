@@ -11,6 +11,14 @@ export const STALE_SESSION_MESSAGE = 'Your old session is no longer valid. Pleas
 
 function handleAuthError(error: AuthError | null): string | null {
   if (!error) return null;
+  const message = error.message.toLowerCase();
+  if (
+    message.includes('email rate limit exceeded')
+    || message.includes('rate limit')
+    || message.includes('too many requests')
+  ) {
+    return 'Too many signup or email attempts. Please wait a few minutes before trying again.';
+  }
   if (error.message === 'Invalid login credentials') {
     return 'Invalid email or password. Please try again.';
   }
@@ -25,6 +33,11 @@ function handleAuthError(error: AuthError | null): string | null {
 
 function getAppOrigin(): string {
   return (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
+}
+
+export function isDevAdminEmail(email: string): boolean {
+  const devAdminEmail = import.meta.env.VITE_DEV_ADMIN_EMAIL?.trim().toLowerCase();
+  return Boolean(devAdminEmail && email.trim().toLowerCase() === devAdminEmail);
 }
 
 export async function signUp(email: string, password: string, fullName?: string): Promise<AuthResult<{ user: User | null; session: Session | null }>> {
@@ -96,7 +109,8 @@ export async function resetPassword(email: string): Promise<AuthResult<null>> {
   const supabase = getSupabaseClient();
   const redirectTo = `${getAppOrigin()}/update-password`;
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-  if (error) return { data: null, error: error.message };
+  const message = handleAuthError(error);
+  if (message) return { data: null, error: message };
   return { data: null, error: null };
 }
 

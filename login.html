@@ -42,9 +42,23 @@
   </div>
 
   <script type="module">
-    import { logIn, getPageAuthState, STALE_SESSION_MESSAGE } from '/src/lib/auth.ts';
+    import { logIn, getPageAuthState, isDevAdminEmail, STALE_SESSION_MESSAGE } from '/src/lib/auth.ts';
 
     const errorEl = document.getElementById('login-error');
+    const emailEl = /** @type {HTMLInputElement | null} */ (document.getElementById('email'));
+    const helpEl = document.createElement('div');
+    helpEl.className = 'form-success';
+    helpEl.style.display = 'none';
+    helpEl.textContent = 'Developer admin account detected. Use the password you set in Supabase.';
+    errorEl?.before(helpEl);
+
+    function updateDevAdminHelp() {
+      if (!emailEl) return;
+      helpEl.style.display = isDevAdminEmail(emailEl.value) ? 'block' : 'none';
+    }
+
+    emailEl?.addEventListener('input', updateDevAdminHelp);
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('session') === 'expired' && errorEl) {
       errorEl.textContent = STALE_SESSION_MESSAGE;
@@ -71,6 +85,7 @@
 
       const email = /** @type {HTMLInputElement} */ (document.getElementById('email')).value;
       const password = /** @type {HTMLInputElement} */ (document.getElementById('password')).value;
+      updateDevAdminHelp();
 
       const { data, error } = await logIn(email, password);
       if (error) {

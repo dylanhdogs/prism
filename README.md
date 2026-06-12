@@ -100,6 +100,9 @@ Add these to your `.env` file:
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 VITE_APP_URL=http://localhost:3000
+VITE_DEV_ADMIN_EMAIL=your-email@example.com
+RESEND_API_KEY=your-resend-api-key
+RESEND_FROM_EMAIL=Prism <noreply@prismbudgeting.com>
 ```
 
 ### 3. Run database migrations
@@ -135,11 +138,40 @@ In your Supabase dashboard:
 | `VITE_SUPABASE_URL` | Yes | Frontend (client) | Public, starts with `https://` |
 | `VITE_SUPABASE_ANON_KEY` | Yes | Frontend (client) | Public anon key from Supabase |
 | `VITE_APP_URL` | No | Auth redirects, invite links | Optional. If unset, the app uses the current browser origin. Set it when you want email links to use a specific domain. |
+| `VITE_DEV_ADMIN_EMAIL` | No | Login helper | Optional. Must match a real, email-confirmed Supabase Auth user. This value is public because `VITE_` variables are exposed to the browser. |
+| `RESEND_API_KEY` | Yes for invite email sending | Cloudflare Worker | Secret API key used to send invite emails. |
+| `RESEND_FROM_EMAIL` | Yes for invite email sending | Cloudflare Worker | Verified sender address in Resend, for example `Prism <noreply@yourdomain.com>`. |
 
 ### Security rules
 
 - **Never** commit `.env` to git. Only `.env.example` is committed.
 - The `VITE_` prefix makes Vite expose the variable to client code.
+- Do not store admin passwords or Supabase service role keys in frontend environment variables.
+- Keep `RESEND_API_KEY` private. It should only live in local `.env` or Cloudflare environment variables.
+
+### Developer admin access
+
+Use `VITE_DEV_ADMIN_EMAIL` when you need one dependable development account that avoids repeated signup confirmation emails.
+
+1. In Supabase, go to **Authentication -> Users**.
+2. Create a user with the same email as `VITE_DEV_ADMIN_EMAIL`.
+3. Mark the user's email as confirmed.
+4. Set a password for that user in Supabase.
+5. Log in normally at `/login` with that email and password.
+
+This is not a fake login. The account still signs in through Supabase, so Row Level Security and normal database permissions continue to work.
+
+### Invite emails
+
+Prism now sends invite emails through [Resend](https://resend.com/), which is the simplest provider to wire up here.
+
+1. Create a Resend account.
+2. Verify a sender email or domain.
+3. Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` in your `.env` file.
+4. Add the same variables to Cloudflare Pages for production.
+5. In the group invite dialog, enter an email address before creating the invite.
+
+The app still creates the shareable invite link, so you can copy it even if you choose not to email it.
 
 ---
 
@@ -221,6 +253,9 @@ In Cloudflare Pages dashboard → your project → **Settings → Environment va
 |----------|-------|
 | `VITE_SUPABASE_URL` | Your Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Your Supabase anon key |
+| `VITE_DEV_ADMIN_EMAIL` | Optional developer admin email |
+| `RESEND_API_KEY` | Resend API key for invite emails |
+| `RESEND_FROM_EMAIL` | Verified Resend sender address |
 | `APP_URL` | `https://your-app.pages.dev` |
 | `SITE_URL` | `https://your-app.pages.dev` |
 
@@ -319,7 +354,7 @@ prism/
 | **Configure Auth** | Set Site URL and Redirect URLs in Supabase Auth settings. |
 | **Environment variables** | Create `.env` from `.env.example`, fill in values. |
 | **Email sending** | Email confirmation and password reset emails require a Supabase email provider (free tier includes built-in email). No SMTP setup needed to start. |
-| **Invite emails** | The invite system creates a link but does not send an email yet. You'll need to connect an email service or manually share invite links. |
+| **Invite emails** | Invite emails are sent through Resend. You need to set a verified sender address and API key. |
 | **Custom domain** | Requires Cloudflare DNS configuration. |
 
 ---

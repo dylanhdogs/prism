@@ -146,17 +146,29 @@
   <div id="add-member-modal" class="modal-overlay" style="display:none;">
     <div class="modal">
       <h2>Invite to group</h2>
-      <div id="invite-loading" class="loading-state" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:24px 0;">
+      <div id="invite-form">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label for="invite-email-input">Recipient email</label>
+          <input type="email" id="invite-email-input" placeholder="friend@example.com" autocomplete="email">
+        </div>
+        <p style="font-size:14px;color:var(--gray-600);margin-bottom:12px;">We’ll email the invite if you add an address. You can still copy the link after it’s created.</p>
+        <div class="modal-actions" style="margin-top:0;">
+          <button type="button" class="btn btn-primary btn-sm" id="create-invite-btn">Create invite</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeAddMemberModal()">Cancel</button>
+        </div>
+      </div>
+      <div id="invite-loading" class="loading-state" style="display:none;flex-direction:column;align-items:center;gap:8px;padding:24px 0;">
         <div class="spinner-lg"></div>
-        <span>Generating invite link...</span>
+        <span>Creating invite...</span>
       </div>
       <div id="invite-link-display" style="display:none;">
-        <p style="font-size:14px;color:var(--gray-600);margin-bottom:12px;">Share this single-use link to invite someone to this group:</p>
-        <div style="display:flex;gap:8px;">
+        <p style="font-size:14px;color:var(--gray-600);margin-bottom:12px;">Here is the invite link. You can share it directly or send it by email:</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <input type="text" id="invite-link-input" readonly
             style="flex:1;font-family:inherit;font-size:13px;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:10px;background:var(--gray-50);color:var(--gray-900);">
           <button type="button" class="btn btn-primary btn-sm" id="copy-invite-btn">Copy</button>
         </div>
+        <div id="invite-send-status" class="form-success" style="display:none;margin-top:12px;"></div>
         <p id="copy-feedback" style="font-size:12px;color:#10b981;margin-top:8px;display:none;">Copied!</p>
         <div class="modal-actions" style="margin-top:20px;">
           <button type="button" class="btn btn-secondary" onclick="closeAddMemberModal()">Done</button>
@@ -171,7 +183,7 @@
     import { getGroupExpenses, createExpense } from '/src/lib/expenses.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
     import { getGroupSettlements, markSettlementPaid } from '/src/lib/settlements.ts';
-    import { createInvite } from '/src/lib/invites.ts';
+    import { createInvite, sendInviteEmail } from '/src/lib/invites.ts';
     import { getProfile } from '/src/lib/database.ts';
 
     let groupId = '';
@@ -179,6 +191,7 @@
     let currentMemberId = '';
     let currentUserRole = 'member';
     let members = [];
+    let currentInviteGroupName = '';
 
     async function init() {
       const auth = await getPageAuthState();
@@ -441,24 +454,15 @@
     });
 
     // ── Add Member Modal ──
-    window.showAddMemberModal = async function() {
+    window.showAddMemberModal = function() {
       const modal = document.getElementById('add-member-modal');
       modal.style.display = 'flex';
-      document.getElementById('invite-loading').innerHTML = '<div class="spinner-lg"></div><span>Generating invite link...</span>';
-      document.getElementById('invite-loading').style.display = 'flex';
+      document.getElementById('invite-form').style.display = 'block';
+      document.getElementById('invite-loading').style.display = 'none';
       document.getElementById('invite-link-display').style.display = 'none';
       document.getElementById('copy-feedback').style.display = 'none';
-
-      try {
-        const invite = await createInvite(groupId);
-        document.getElementById('invite-loading').style.display = 'none';
-        document.getElementById('invite-link-display').style.display = 'block';
-        document.getElementById('invite-link-input').value = invite.inviteLink;
-        members = await getGroupMembers(groupId);
-        await loadMembers();
-      } catch (err) {
-        document.getElementById('invite-loading').innerHTML = `<div class="form-error">${escapeHtml(err.message)}</div>`;
-      }
+      document.getElementById('invite-send-status').style.display = 'none';
+      document.getElementById('invite-email-input').value = '';
     };
     window.closeAddMemberModal = function() {
       document.getElementById('add-member-modal').style.display = 'none';
@@ -475,6 +479,46 @@
         document.execCommand('copy');
         document.getElementById('copy-feedback').style.display = 'block';
         setTimeout(() => { document.getElementById('copy-feedback').style.display = 'none'; }, 2000);
+      }
+    });
+
+    document.getElementById('create-invite-btn')?.addEventListener('click', async () => {
+      const emailInput = /** @type {HTMLInputElement} */ (document.getElementById('invite-email-input'));
+      const inviteForm = document.getElementById('invite-form');
+      const inviteLoading = document.getElementById('invite-loading');
+      const inviteDisplay = document.getElementById('invite-link-display');
+      const statusEl = document.getElementById('invite-send-status');
+      const createBtn = /** @type {HTMLButtonElement} */ (document.getElementById('create-invite-btn'));
+      const email = emailInput.value.trim();
+
+      inviteForm.style.display = 'none';
+      inviteLoading.style.display = 'flex';
+      statusEl.style.display = 'none';
+      createBtn.disabled = true;
+
+      try {
+        const invite = await createInvite(groupId, email || undefined);
+        currentInviteGroupName = invite.groupName;
+        inviteLoading.style.display = 'none';
+        inviteDisplay.style.display = 'block';
+        document.getElementById('invite-link-input').value = invite.inviteLink;
+        if (email) {
+          try {
+            await sendInviteEmail(email, invite.inviteLink, currentInviteGroupName);
+            statusEl.className = 'form-success';
+            statusEl.textContent = `Invite email sent to ${email}.`;
+          } catch (sendErr) {
+            statusEl.className = 'form-error';
+            statusEl.textContent = sendErr.message;
+          }
+          statusEl.style.display = 'block';
+        }
+        members = await getGroupMembers(groupId);
+        await loadMembers();
+      } catch (err) {
+        inviteLoading.innerHTML = `<div class="form-error">${escapeHtml(err.message)}</div>`;
+      } finally {
+        createBtn.disabled = false;
       }
     });
 
