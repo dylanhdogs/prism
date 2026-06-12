@@ -37,7 +37,7 @@ export async function createInvite(groupId: string) {
 
   return {
     invite: data,
-    inviteLink: `${getAppOrigin()}/invite/${token}`,
+    inviteLink: `${getAppOrigin()}/invite.html?token=${encodeURIComponent(token)}`,
   };
 }
 
