@@ -304,42 +304,6 @@
     }
 
     /* =============================================
-               TRUSTED BY STRIP
-            ============================================= */
-    .trusted {
-      background: var(--navy);
-      border-top: 1px solid rgba(255,255,255,0.06);
-      padding: 40px 24px;
-    }
-    .trusted-inner {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 40px;
-      flex-wrap: wrap;
-    }
-    .trusted-inner .text {
-      font-size: 14px;
-      color: var(--gray-400);
-      font-weight: 500;
-      white-space: nowrap;
-    }
-    .trusted-logos {
-      display: flex;
-      align-items: center;
-      gap: 70px;
-      flex-wrap: wrap;
-    }
-    .trusted-logos img {
-      height: 28px;
-      transition: opacity 0.2s;
-      object-fit: contain;
-    }
-    .trusted-logos img:hover { opacity: 0.7; }
-
-    /* =============================================
                FEATURES
             ============================================= */
     .features {
@@ -1071,8 +1035,6 @@
       .footer-inner { grid-template-columns: 1fr 1fr; }
       .cta-final-inner { flex-direction: column; text-align: center; }
       .cta-final-right { justify-content: center; }
-      .trusted-inner { justify-content: center; text-align: center; }
-      .trusted-logos { gap: 40px; justify-content: center; }
     }
     @media (max-width: 768px) {
       nav { display: none; }
@@ -1106,9 +1068,6 @@
       .cta-final-left h2 { font-size: 28px; }
       .footer-inner { grid-template-columns: 1fr; gap: 32px; }
       .footer { padding: 40px 16px 24px; }
-      .trusted-inner { flex-direction: column; align-items: center; text-align: center; }
-      .trusted-logos { gap: 32px; justify-content: center; }
-      .trusted-logos img { height: 30px; }
       .container { padding: 0 16px; }
     }
     @media (max-width: 480px) {
@@ -1117,8 +1076,6 @@
       .plans-grid { max-width: 100%; }
       .phone-mockup { width: 120px; padding: 10px 8px; }
       .phone-mockup .phone-balance .value { font-size: 16px; }
-      .trusted-logos { gap: 24px; justify-content: center; }
-      .trusted-logos img { height: 26px; }
     }
   </style>
 </head>
@@ -1184,21 +1141,7 @@
     </div>
   </section>
 
-  <!-- =============================================
-  TRUSTED BY STRIP
-  ============================================= -->
-  <section class="trusted">
-    <div class="trusted-inner">
-      <span class="text">Trusted by thousands of groups around the world.</span>
-      <div class="trusted-logos">
-        <img src="google logo.png?v=2" alt="Google">
-        <img src="airbnb logo.png" alt="Airbnb">
-        <img src="notion logo.png" alt="Notion">
-        <img src="Uber logo.png" alt="Uber">
-        <img src="spotify logo.png?v=2" alt="Spotify">
-      </div>
-    </div>
-  </section>
+
 
   <!-- =============================================
   FEATURES
