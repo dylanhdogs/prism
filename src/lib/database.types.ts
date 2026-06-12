@@ -140,6 +140,7 @@ export interface Invitation {
 export interface GuestSession {
   id: string;
   invitation_id: string;
+  group_member_id: string | null;
   guest_name: string;
   session_token_hash: string;
   expires_at: string;

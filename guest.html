@@ -20,7 +20,7 @@
         </a>
       </nav>
       <div class="sidebar-footer">
-        <span style="font-size:12px;color:var(--gray-400);">Read-only access</span>
+        <span style="font-size:12px;color:var(--gray-400);">Guest access</span>
       </div>
     </aside>
     <main class="app-main">
@@ -184,7 +184,7 @@
 
         document.getElementById('group-title').textContent = data.group.name;
         document.getElementById('group-name').textContent = data.group.name;
-        document.getElementById('group-meta').textContent = `${data.group.description || 'Shared expenses group'} · Access expires ${new Date(data.guest.expiresAt).toLocaleString()}`;
+        document.getElementById('group-meta').textContent = data.group.description || 'Shared expenses group';
         document.getElementById('guest-name').textContent = data.guest.name;
 
         renderBalances(data.members, data.expenses);

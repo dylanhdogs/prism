@@ -54,7 +54,7 @@
     }
 
     function showNameForm(data) {
-      document.getElementById('invite-status').textContent = `You've been invited to view "${data.groupName || 'a group'}". Enter your name for 24-hour read-only access.`;
+      document.getElementById('invite-status').textContent = `You've been invited to view "${data.groupName || 'a group'}". Enter your name once to create guest access for this group.`;
       document.getElementById('guest-name-form').style.display = 'block';
       document.getElementById('guest-name-input').focus();
     }

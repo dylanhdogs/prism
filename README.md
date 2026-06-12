@@ -192,6 +192,7 @@ All migrations are in `supabase/migrations/`. Run them in order:
 | `009_guest_sessions.sql` | Guest session storage |
 | `010_guest_invite_rpc.sql` | Browser-callable guest invite RPC |
 | `011_security_hardening.sql` | Stricter member and payment permissions |
+| `012_persistent_guest_accounts.sql` | Durable browser guest access + guest group membership |
 
 Each file includes:
 - `CREATE TABLE` statements
