@@ -33,7 +33,7 @@ export interface Database {
       };
       invitations: {
         Row: Invitation;
-        Insert: Omit<Invitation, 'id' | 'created_at'>;
+        Insert: Omit<Invitation, 'id' | 'created_at' | 'invited_email' | 'status'> & { invited_email?: string | null; status?: string };
         Update: Partial<Omit<Invitation, 'id'>>;
       };
       activity_logs: {
@@ -115,7 +115,7 @@ export interface Settlement {
 export interface Invitation {
   id: string;
   group_id: string;
-  invited_email: string;
+  invited_email: string | null;
   invited_by: string;
   token: string;
   status: string;

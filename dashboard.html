@@ -35,9 +35,6 @@
           <h3 style="font-size:18px;font-weight:700;color:var(--navy);">Your Groups</h3>
           <button class="btn btn-primary btn-sm" onclick="showCreateGroupModal()">+ New Group</button>
         </div>
-        <div id="invite-banner" style="display:none;margin-top:16px;padding:12px 16px;background:var(--lavender);border-radius:12px;font-size:14px;font-weight:600;color:var(--purple);cursor:pointer;" onclick="window.location.href='/invite'">
-          <span id="invite-banner-text"></span>
-        </div>
         <div id="groups-loading" class="loading-state" style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:40px;">
           <div class="spinner-lg"></div>
           <span>Loading your groups...</span>
@@ -78,7 +75,6 @@
     import { getUserGroups, getGroupMembers, createGroup } from '/src/lib/groups.ts';
     import { getProfile } from '/src/lib/database.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
-    import { getUserInvitations } from '/src/lib/invites.ts';
 
     let currentUserId = '';
 
@@ -100,7 +96,6 @@
         }
 
         await loadGroups();
-        await loadInvitations();
       } catch (err) {
         const loadingState = document.getElementById('groups-loading');
         if (loadingState) loadingState.style.display = 'none';
@@ -177,18 +172,6 @@
       return div.innerHTML;
     }
 
-    async function loadInvitations() {
-      try {
-        const invites = await getUserInvitations();
-        if (invites && invites.length > 0) {
-          const banner = document.getElementById('invite-banner');
-          const text = document.getElementById('invite-banner-text');
-          text.textContent = `You have ${invites.length} pending invitation${invites.length > 1 ? 's' : ''} — view & accept`;
-          banner.style.display = 'block';
-        }
-      } catch {}
-    }
-
     // ── Create Group ──
     window.showCreateGroupModal = function() {
       document.getElementById('create-group-modal').style.display = 'flex';
@@ -213,8 +196,7 @@
         await createGroup(name, description || undefined);
         window.closeCreateGroupModal();
         document.getElementById('create-group-form').reset();
-      await loadGroups();
-      await loadInvitations();
+        await loadGroups();
       } catch (err) {
         errorEl.textContent = err.message;
         errorEl.style.display = 'block';
