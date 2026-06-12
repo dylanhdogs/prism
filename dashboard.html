@@ -35,6 +35,10 @@
           <h3 style="font-size:18px;font-weight:700;color:var(--navy);">Your Groups</h3>
           <button class="btn btn-primary btn-sm" onclick="showCreateGroupModal()">+ New Group</button>
         </div>
+        <div id="groups-loading" class="loading-state" style="display:flex;">
+          <div class="spinner-lg"></div>
+          <span>Loading your groups...</span>
+        </div>
         <div id="groups-list" class="groups-grid"></div>
         <div id="empty-state" class="empty-state" style="display:none;">
           <h3>No groups yet</h3>
@@ -96,9 +100,11 @@
     async function loadGroups() {
       const container = document.getElementById('groups-list');
       const emptyState = document.getElementById('empty-state');
+      const loadingState = document.getElementById('groups-loading');
 
       try {
         const groups = await getUserGroups();
+        loadingState.style.display = 'none';
         if (groups.length === 0) {
           container.innerHTML = '';
           emptyState.style.display = 'block';
@@ -149,6 +155,7 @@
         }
         container.innerHTML = html;
       } catch (err) {
+        loadingState.style.display = 'none';
         container.innerHTML = `<div class="form-error">${escapeHtml(err.message || 'Error loading groups')}</div>`;
       }
     }

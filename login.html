@@ -55,7 +55,7 @@
       if (!btn || !errorEl) return;
 
       btn.disabled = true;
-      btn.textContent = 'Logging in...';
+      btn.classList.add('btn-loading');
       errorEl.style.display = 'none';
 
       const email = /** @type {HTMLInputElement} */ (document.getElementById('email')).value;
@@ -66,7 +66,7 @@
         errorEl.textContent = error;
         errorEl.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = 'Log in';
+        btn.classList.remove('btn-loading');
         return;
       }
 

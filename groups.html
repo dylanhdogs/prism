@@ -55,34 +55,52 @@
 
         <!-- Balances Tab -->
         <div id="tab-balances" class="tab-content">
-          <div class="balance-summary" id="balance-summary"></div>
-          <div class="section-card">
-            <h3>Who owes what</h3>
-            <div id="debts-list"></div>
+          <div id="balances-loading" class="loading-state">
+            <div class="spinner-lg"></div>
+            <span>Loading balances...</span>
           </div>
-          <div class="section-card">
-            <h3>Simplified settlements</h3>
-            <div id="simplified-list"></div>
+          <div id="balances-content" style="display:none;">
+            <div class="balance-summary" id="balance-summary"></div>
+            <div class="section-card">
+              <h3>Who owes what</h3>
+              <div id="debts-list"></div>
+            </div>
+            <div class="section-card">
+              <h3>Simplified settlements</h3>
+              <div id="simplified-list"></div>
+            </div>
           </div>
         </div>
 
         <!-- Expenses Tab -->
         <div id="tab-expenses" class="tab-content" style="display:none;">
-          <div class="section-card">
+          <div id="expenses-loading" class="loading-state">
+            <div class="spinner-lg"></div>
+            <span>Loading expenses...</span>
+          </div>
+          <div class="section-card" id="expenses-content" style="display:none;">
             <div id="expenses-list" class="expenses-list"></div>
           </div>
         </div>
 
         <!-- Members Tab -->
         <div id="tab-members" class="tab-content" style="display:none;">
-          <div class="section-card">
+          <div id="members-loading" class="loading-state">
+            <div class="spinner-lg"></div>
+            <span>Loading members...</span>
+          </div>
+          <div class="section-card" id="members-content" style="display:none;">
             <div id="members-list" class="members-list"></div>
           </div>
         </div>
 
         <!-- Settlements Tab -->
         <div id="tab-settlements" class="tab-content" style="display:none;">
-          <div class="section-card">
+          <div id="settlements-loading" class="loading-state">
+            <div class="spinner-lg"></div>
+            <span>Loading settlements...</span>
+          </div>
+          <div class="section-card" id="settlements-content" style="display:none;">
             <div id="settlements-list"></div>
           </div>
         </div>
@@ -196,8 +214,12 @@
     }
 
     async function loadBalances() {
+      document.getElementById('balances-loading').style.display = 'flex';
+      document.getElementById('balances-content').style.display = 'none';
       try {
         const { balances, debts, simplified } = await calculateGroupBalances(groupId);
+        document.getElementById('balances-loading').style.display = 'none';
+        document.getElementById('balances-content').style.display = 'block';
 
         let totalOwed = 0, totalOwe = 0;
         const myMemberId = members.find(m => m.user_id === currentUserId)?.id || '';
@@ -247,8 +269,12 @@
     }
 
     async function loadExpenses() {
+      document.getElementById('expenses-loading').style.display = 'flex';
+      document.getElementById('expenses-content').style.display = 'none';
       try {
         const expenses = await getGroupExpenses(groupId);
+        document.getElementById('expenses-loading').style.display = 'none';
+        document.getElementById('expenses-content').style.display = 'block';
         const el = document.getElementById('expenses-list');
         if (!expenses || expenses.length === 0) {
           el.innerHTML = '<p style="color:var(--gray-400);font-size:14px;">No expenses yet. Add your first expense!</p>';
@@ -264,29 +290,46 @@
           </div>
         `).join('');
       } catch (err) {
+        document.getElementById('expenses-loading').style.display = 'none';
+        document.getElementById('expenses-content').style.display = 'block';
+        document.getElementById('expenses-list').innerHTML = '<div class="form-error">Error loading expenses</div>';
         console.error(err);
       }
     }
 
     async function loadMembers() {
-      const el = document.getElementById('members-list');
-      if (members.length === 0) { el.innerHTML = '<p style="color:var(--gray-400);">No members.</p>'; return; }
-      el.innerHTML = members.map(m => `
-        <div class="member-row">
-          <div class="member-info">
-            <div class="member-avatar">${(m.display_name || '?')[0].toUpperCase()}</div>
-            <div>
-              <div class="member-name">${escapeHtml(m.display_name || 'Invited')}</div>
-              <div class="member-role">${m.role}${m.user_id === currentUserId ? ' (you)' : ''}</div>
+      document.getElementById('members-loading').style.display = 'flex';
+      document.getElementById('members-content').style.display = 'none';
+      try {
+        document.getElementById('members-loading').style.display = 'none';
+        document.getElementById('members-content').style.display = 'block';
+        const el = document.getElementById('members-list');
+        if (members.length === 0) { el.innerHTML = '<p style="color:var(--gray-400);">No members.</p>'; return; }
+        el.innerHTML = members.map(m => `
+          <div class="member-row">
+            <div class="member-info">
+              <div class="member-avatar">${(m.display_name || '?')[0].toUpperCase()}</div>
+              <div>
+                <div class="member-name">${escapeHtml(m.display_name || 'Invited')}</div>
+                <div class="member-role">${m.role}${m.user_id === currentUserId ? ' (you)' : ''}</div>
+              </div>
             </div>
           </div>
-        </div>
-      `).join('');
+        `).join('');
+      } catch (err) {
+        document.getElementById('members-loading').style.display = 'none';
+        document.getElementById('members-content').style.display = 'block';
+        document.getElementById('members-list').innerHTML = '<div class="form-error">Error loading members</div>';
+      }
     }
 
     async function loadSettlements() {
+      document.getElementById('settlements-loading').style.display = 'flex';
+      document.getElementById('settlements-content').style.display = 'none';
       try {
         const settlements = await getGroupSettlements(groupId);
+        document.getElementById('settlements-loading').style.display = 'none';
+        document.getElementById('settlements-content').style.display = 'block';
         const el = document.getElementById('settlements-list');
         if (!settlements || settlements.length === 0) {
           el.innerHTML = '<p style="color:var(--gray-400);font-size:14px;">No settlements recorded.</p>';
@@ -298,7 +341,12 @@
             <span class="amount">$${Number(s.amount).toFixed(2)}</span>
           </div>
         `).join('');
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        document.getElementById('settlements-loading').style.display = 'none';
+        document.getElementById('settlements-content').style.display = 'block';
+        document.getElementById('settlements-list').innerHTML = '<div class="form-error">Error loading settlements</div>';
+        console.error(err);
+      }
     }
 
     function escapeHtml(text) {
@@ -340,7 +388,8 @@
       e.preventDefault();
       const btn = document.getElementById('add-expense-btn');
       const errorEl = document.getElementById('add-expense-error');
-      btn.disabled = true; btn.textContent = 'Adding...'; errorEl.style.display = 'none';
+      btn.disabled = true; btn.classList.add('btn-loading');
+      errorEl.style.display = 'none';
 
       const title = document.getElementById('expense-title').value;
       const amount = parseFloat(document.getElementById('expense-amount').value);
@@ -352,7 +401,7 @@
       if (selectedMemberIds.length === 0) {
         errorEl.textContent = 'Select at least one person to split with.';
         errorEl.style.display = 'block';
-        btn.disabled = false; btn.textContent = 'Add expense';
+        btn.disabled = false; btn.classList.remove('btn-loading');
         return;
       }
 
@@ -367,7 +416,7 @@
       } catch (err) {
         errorEl.textContent = err.message;
         errorEl.style.display = 'block';
-      } finally { btn.disabled = false; btn.textContent = 'Add expense'; }
+      } finally { btn.disabled = false; btn.classList.remove('btn-loading'); }
     });
 
     // ── Add Member Modal ──
@@ -383,7 +432,8 @@
       e.preventDefault();
       const btn = document.getElementById('add-member-btn');
       const errorEl = document.getElementById('add-member-error');
-      btn.disabled = true; btn.textContent = 'Sending...'; errorEl.style.display = 'none';
+      btn.disabled = true; btn.classList.add('btn-loading');
+      errorEl.style.display = 'none';
 
       const email = document.getElementById('member-email').value;
 
@@ -396,7 +446,7 @@
       } catch (err) {
         errorEl.textContent = err.message;
         errorEl.style.display = 'block';
-      } finally { btn.disabled = false; btn.textContent = 'Send invite'; }
+      } finally { btn.disabled = false; btn.classList.remove('btn-loading'); }
     });
 
     // ── Settle up ──

@@ -41,6 +41,8 @@
     import { getInviteByToken, acceptInvite } from '/src/lib/invites.ts';
 
     async function init() {
+      const statusEl = document.getElementById('invite-status');
+      statusEl.innerHTML = '<div class="loading-state"><div class="spinner-lg"></div><span>Checking invite...</span></div>';
       const path = window.location.pathname;
       const token = path.split('/invite/').filter(Boolean)[0];
 

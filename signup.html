@@ -58,7 +58,7 @@
       if (!btn || !errorEl) return;
 
       btn.disabled = true;
-      btn.textContent = 'Creating account...';
+      btn.classList.add('btn-loading');
       errorEl.style.display = 'none';
 
       const email = document.getElementById('email').value;
@@ -70,7 +70,7 @@
         errorEl.textContent = error;
         errorEl.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = 'Create account';
+        btn.classList.remove('btn-loading');
         return;
       }
 
@@ -86,7 +86,7 @@
         errorEl.textContent = 'Check your email for a confirmation link.';
         errorEl.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = 'Create account';
+        btn.classList.remove('btn-loading');
       }
     });
   </script>
