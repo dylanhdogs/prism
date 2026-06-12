@@ -106,7 +106,7 @@ export async function acceptInvite(token: string) {
 export async function getUserInvitations() {
   const supabase = getSupabaseClient();
   const user = await getCurrentUser();
-  if (!user.data) throw new Error('Not authenticated.');
+  if (!user.data || !user.data.email) return [];
 
   const { data, error } = await supabase
     .from('invitations')
@@ -116,5 +116,5 @@ export async function getUserInvitations() {
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data;
+  return data || [];
 }

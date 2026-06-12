@@ -82,22 +82,29 @@
     let currentUserId = '';
 
     async function init() {
-      const result = await getCurrentUser();
-      if (result.error || !result.data) {
-        window.location.href = '/login';
-        return;
-      }
-
-      currentUserId = result.data.id;
-
       try {
-        const profile = await getProfile(result.data.id);
-        document.getElementById('user-name').textContent = profile.full_name || profile.email;
-      } catch {
-        document.getElementById('user-name').textContent = result.data.email || 'User';
-      }
+        const result = await getCurrentUser();
+        if (result.error || !result.data) {
+          window.location.href = '/login';
+          return;
+        }
 
-      await loadGroups();
+        currentUserId = result.data.id;
+
+        try {
+          const profile = await getProfile(result.data.id);
+          document.getElementById('user-name').textContent = profile.full_name || profile.email;
+        } catch {
+          document.getElementById('user-name').textContent = result.data.email || 'User';
+        }
+
+        await loadGroups();
+        await loadInvitations();
+      } catch (err) {
+        const loadingState = document.getElementById('groups-loading');
+        if (loadingState) loadingState.style.display = 'none';
+        console.error('Dashboard init error:', err);
+      }
     }
 
     async function loadGroups() {

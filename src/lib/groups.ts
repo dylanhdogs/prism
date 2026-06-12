@@ -39,7 +39,8 @@ export async function getUserGroups() {
     .eq('status', 'active');
 
   if (error) throw new Error(error.message);
-  return data.map((m: { groups: Group }) => m.groups) as Group[];
+  if (!data) return [];
+  return data.map((m) => m.groups).filter(Boolean) as Group[];
 }
 
 export async function getGroupById(groupId: string) {
@@ -78,7 +79,7 @@ export async function getGroupMembers(groupId: string) {
     .eq('status', 'active');
 
   if (error) throw new Error(error.message);
-  return data as (GroupMember & { profiles: { full_name: string; email: string; avatar_url: string | null } | null })[];
+  return (data || []) as (GroupMember & { profiles: { full_name: string; email: string; avatar_url: string | null } | null })[];
 }
 
 export async function addGroupMember(groupId: string, email: string, displayName?: string) {
