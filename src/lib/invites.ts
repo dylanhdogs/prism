@@ -12,6 +12,12 @@ function getAppOrigin(): string {
   return (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
 }
 
+function buildInviteLink(token: string): string {
+  const url = new URL('/invite.html', `${getAppOrigin()}/`);
+  url.searchParams.set('token', token);
+  return url.toString();
+}
+
 export async function createInvite(groupId: string) {
   const supabase = getSupabaseClient();
   const user = await getCurrentUser();
@@ -37,7 +43,7 @@ export async function createInvite(groupId: string) {
 
   return {
     invite: data,
-    inviteLink: `${getAppOrigin()}/invite.html?token=${encodeURIComponent(token)}`,
+    inviteLink: buildInviteLink(token),
   };
 }
 

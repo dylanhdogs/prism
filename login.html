@@ -73,7 +73,7 @@
       const pendingToken = sessionStorage.getItem('pending_invite_token');
       if (pendingToken) {
         sessionStorage.removeItem('pending_invite_token');
-        window.location.href = '/invite/' + pendingToken;
+        window.location.href = '/invite.html?token=' + encodeURIComponent(pendingToken);
       } else {
         window.location.href = '/dashboard';
       }
