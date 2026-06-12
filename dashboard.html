@@ -76,7 +76,7 @@
 
   <script type="module">
     import { getCurrentUser, logOut, onAuthStateChange } from '/src/lib/auth.ts';
-    import { getUserGroups, createGroup } from '/src/lib/groups.ts';
+    import { getUserGroups, getGroupMembers, createGroup } from '/src/lib/groups.ts';
     import { getProfile } from '/src/lib/database.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
 
@@ -116,12 +116,40 @@
 
         let html = '';
         for (const group of groups) {
+          let memberCount = 0;
+          let balanceText = '';
+          let balanceClass = '';
+
+          try {
+            const members = await getGroupMembers(group.id);
+            memberCount = members.length;
+            const myMember = members.find(m => m.user_id === currentUserId);
+            if (myMember) {
+              const result = await calculateGroupBalances(group.id);
+              const myBalance = result.balances.find(b => b.memberId === myMember.id);
+              if (myBalance) {
+                if (myBalance.netBalance > 0) {
+                  balanceText = `You are owed $${myBalance.netBalance.toFixed(2)}`;
+                  balanceClass = 'positive';
+                } else if (myBalance.netBalance < 0) {
+                  balanceText = `You owe $${Math.abs(myBalance.netBalance).toFixed(2)}`;
+                  balanceClass = 'negative';
+                } else {
+                  balanceText = 'Settled up';
+                }
+              }
+            }
+          } catch {
+            // fallback — just show member count, no balance
+          }
+
           html += `
             <a href="/groups.html?id=${group.id}" class="group-card">
               <h3>${escapeHtml(group.name)}</h3>
               <div class="group-meta">${group.description ? escapeHtml(group.description) : 'No description'}</div>
+              ${memberCount > 0 ? `<div class="group-meta">${memberCount} member${memberCount !== 1 ? 's' : ''}</div>` : ''}
               <div class="group-balance">
-                <span>View details</span>
+                ${balanceText ? `<span class="${balanceClass}">${balanceText}</span>` : '<span>View details</span>'}
                 <span class="positive">→</span>
               </div>
             </a>
