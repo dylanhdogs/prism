@@ -8,6 +8,10 @@ function generateToken(): string {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+function getAppOrigin(): string {
+  return (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
+}
+
 export async function createInvite(groupId: string) {
   const supabase = getSupabaseClient();
   const user = await getCurrentUser();
@@ -33,7 +37,7 @@ export async function createInvite(groupId: string) {
 
   return {
     invite: data,
-    inviteLink: `${import.meta.env.VITE_APP_URL || window.location.origin}/invite/${token}`,
+    inviteLink: `${getAppOrigin()}/invite/${token}`,
   };
 }
 

@@ -17,6 +17,10 @@ function handleAuthError(error: AuthError | null): string | null {
   return error.message;
 }
 
+function getAppOrigin(): string {
+  return (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
+}
+
 export async function signUp(email: string, password: string, fullName?: string): Promise<AuthResult<{ user: User | null; session: Session | null }>> {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase.auth.signUp({
@@ -65,7 +69,7 @@ export async function getSession(): Promise<AuthResult<Session>> {
 
 export async function resetPassword(email: string): Promise<AuthResult<null>> {
   const supabase = getSupabaseClient();
-  const redirectTo = `${import.meta.env.SITE_URL || import.meta.env.APP_URL || 'http://localhost:3000'}/update-password`;
+  const redirectTo = `${getAppOrigin()}/update-password`;
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
   if (error) return { data: null, error: error.message };
   return { data: null, error: null };
