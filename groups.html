@@ -413,10 +413,12 @@
         document.getElementById('balances-content').style.display = 'block';
 
         let totalOwed = 0, totalOwe = 0;
-        const myMemberIds = getRelatedMemberIds(currentMemberId);
-        const myNetBalance = balances
-          .filter((balance) => myMemberIds.has(balance.memberId))
-          .reduce((total, balance) => total + Number(balance.netBalance), 0);
+        const myMemberIds = getCurrentUserMemberIds();
+        const myNetBalance = debts.reduce((total, debt) => {
+          if (myMemberIds.has(debt.fromMemberId)) return total - Number(debt.amount);
+          if (myMemberIds.has(debt.toMemberId)) return total + Number(debt.amount);
+          return total;
+        }, 0);
         if (myNetBalance > 0) totalOwed = roundMoney(myNetBalance);
         else totalOwe = Math.abs(roundMoney(myNetBalance));
 
@@ -687,30 +689,11 @@
       return currentUserRole === 'owner';
     }
 
-    function getRelatedMemberIds(memberId) {
-      const member = members.find((item) => item.id === memberId);
-      if (!member) return new Set(memberId ? [memberId] : []);
-
-      const identityValues = [
-        member.display_name,
-        member.profiles?.full_name,
-        member.profiles?.email,
-      ].map(normalizeIdentity).filter(Boolean);
-      const identities = new Set(identityValues);
-
-      return new Set(members
-        .filter((item) => {
-          if (item.id === memberId) return true;
-          if (member.user_id && item.user_id === member.user_id) return true;
-          return [item.display_name, item.profiles?.full_name, item.profiles?.email]
-            .map(normalizeIdentity)
-            .some((value) => value && identities.has(value));
-        })
-        .map((item) => item.id));
-    }
-
-    function normalizeIdentity(value) {
-      return String(value || '').trim().toLowerCase();
+    function getCurrentUserMemberIds() {
+      const ids = members
+        .filter((member) => member.id === currentMemberId || (currentUserId && member.user_id === currentUserId))
+        .map((member) => member.id);
+      return new Set(ids.length ? ids : (currentMemberId ? [currentMemberId] : []));
     }
 
     function updateGroupHeader(group) {

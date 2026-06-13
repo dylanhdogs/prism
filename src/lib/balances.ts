@@ -172,7 +172,7 @@ export async function calculateGroupBalances(groupId: string): Promise<{
     });
   }
 
-  const simplified = simplifyDebts(balances, memberMap);
+  const simplified = simplifyDebtsFromEntries(debts, memberMap);
   return { balances, debts, simplified };
 }
 
@@ -207,6 +207,25 @@ function simplifyDebts(balances: BalanceSummary[], memberMap: Map<string, string
   }
 
   return result;
+}
+
+function simplifyDebtsFromEntries(debts: OwedEntry[], memberMap: Map<string, string>): OwedEntry[] {
+  const netByMember = new Map<string, number>();
+
+  for (const debt of debts) {
+    netByMember.set(debt.fromMemberId, roundMoney((netByMember.get(debt.fromMemberId) || 0) - debt.amount));
+    netByMember.set(debt.toMemberId, roundMoney((netByMember.get(debt.toMemberId) || 0) + debt.amount));
+  }
+
+  const balances = Array.from(netByMember, ([memberId, netBalance]) => ({
+    memberId,
+    displayName: memberMap.get(memberId) || 'Unknown',
+    totalPaid: Math.max(0, netBalance),
+    totalOwed: Math.max(0, -netBalance),
+    netBalance,
+  }));
+
+  return simplifyDebts(balances, memberMap);
 }
 
 function normalizeSplitsForBalance(expenses: ExpenseRow[], splits: SplitRow[]): SplitRow[] {
