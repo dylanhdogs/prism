@@ -42,22 +42,22 @@
   </div>
 
   <script type="module">
-    import { logIn, getPageAuthState, isDevAdminEmail, STALE_SESSION_MESSAGE } from '/src/lib/auth.ts';
+    import { logIn, getPageAuthState, isDevOwnerEmail, STALE_SESSION_MESSAGE } from '/src/lib/auth.ts';
 
     const errorEl = document.getElementById('login-error');
     const emailEl = /** @type {HTMLInputElement | null} */ (document.getElementById('email'));
     const helpEl = document.createElement('div');
     helpEl.className = 'form-success';
     helpEl.style.display = 'none';
-    helpEl.textContent = 'Developer admin account detected. Use the password you set in Supabase.';
+    helpEl.textContent = 'Developer owner account detected. Use the password you set in Supabase.';
     errorEl?.before(helpEl);
 
-    function updateDevAdminHelp() {
+    function updateDevOwnerHelp() {
       if (!emailEl) return;
-      helpEl.style.display = isDevAdminEmail(emailEl.value) ? 'block' : 'none';
+      helpEl.style.display = isDevOwnerEmail(emailEl.value) ? 'block' : 'none';
     }
 
-    emailEl?.addEventListener('input', updateDevAdminHelp);
+    emailEl?.addEventListener('input', updateDevOwnerHelp);
 
     const params = new URLSearchParams(window.location.search);
     if (params.get('session') === 'expired' && errorEl) {
@@ -85,7 +85,7 @@
 
       const email = /** @type {HTMLInputElement} */ (document.getElementById('email')).value;
       const password = /** @type {HTMLInputElement} */ (document.getElementById('password')).value;
-      updateDevAdminHelp();
+      updateDevOwnerHelp();
 
       const { data, error } = await logIn(email, password);
       if (error) {

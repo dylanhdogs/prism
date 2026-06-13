@@ -35,9 +35,9 @@ function getAppOrigin(): string {
   return (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
 }
 
-export function isDevAdminEmail(email: string): boolean {
-  const devAdminEmail = import.meta.env.VITE_DEV_ADMIN_EMAIL?.trim().toLowerCase();
-  return Boolean(devAdminEmail && email.trim().toLowerCase() === devAdminEmail);
+export function isDevOwnerEmail(email: string): boolean {
+  const devOwnerEmail = import.meta.env.VITE_DEV_ADMIN_EMAIL?.trim().toLowerCase();
+  return Boolean(devOwnerEmail && email.trim().toLowerCase() === devOwnerEmail);
 }
 
 export async function signUp(email: string, password: string, fullName?: string): Promise<AuthResult<{ user: User | null; session: Session | null }>> {

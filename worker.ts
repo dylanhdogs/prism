@@ -15,6 +15,9 @@ function rewriteAssetRequest(request: Request) {
     '/dashboard': '/dashboard.html',
     '/groups': '/groups.html',
     '/guest': '/guest.html',
+    '/about': '/about.html',
+    '/help': '/help.html',
+    '/privacy': '/privacy.html',
   };
 
   if (url.pathname.startsWith('/invite/')) url.pathname = '/invite.html';

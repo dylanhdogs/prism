@@ -4,6 +4,11 @@ import { logActivity } from './database';
 import type { Group, GroupMember } from './database.types';
 
 export async function requireGroupAdmin(groupId: string) {
+  // Legacy name kept for older imports; owner is now the only elevated role.
+  return requireGroupOwner(groupId);
+}
+
+export async function requireGroupOwner(groupId: string) {
   const supabase = getSupabaseClient();
   const user = await getCurrentUser();
   if (!user.data) throw new Error('Not authenticated.');
@@ -16,8 +21,8 @@ export async function requireGroupAdmin(groupId: string) {
     .eq('status', 'active')
     .single();
 
-  if (error || !membership || !['owner', 'admin'].includes(membership.role)) {
-    throw new Error('Only group owners and admins can do that.');
+  if (error || !membership || membership.role !== 'owner') {
+    throw new Error('Only the group owner can do that.');
   }
 
   return { user: user.data, membership };
@@ -45,6 +50,32 @@ export async function createGroup(name: string, description?: string) {
 
   await logActivity(group.id, user.data.id, 'group_created', { name });
   return group as Group;
+}
+
+export async function updateGroupSettings(groupId: string, name: string, description?: string) {
+  const supabase = getSupabaseClient();
+  const { user } = await requireGroupOwner(groupId);
+  const nextName = name.trim();
+  const nextDescription = description?.trim() || null;
+
+  if (!nextName || nextName.length > 100) {
+    throw new Error('Enter a group name between 1 and 100 characters.');
+  }
+
+  if (nextDescription && nextDescription.length > 500) {
+    throw new Error('Keep the description under 500 characters.');
+  }
+
+  const { data, error } = await supabase
+    .from('groups')
+    .update({ name: nextName, description: nextDescription })
+    .eq('id', groupId)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  await logActivity(groupId, user.id, 'group_updated', { name: nextName });
+  return data as Group;
 }
 
 export async function getUserGroups() {
@@ -104,7 +135,7 @@ export async function getGroupMembers(groupId: string) {
 
 export async function addGroupMember(groupId: string, email: string, displayName?: string) {
   const supabase = getSupabaseClient();
-  const { user } = await requireGroupAdmin(groupId);
+  const { user } = await requireGroupOwner(groupId);
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -132,7 +163,7 @@ export async function addGroupMember(groupId: string, email: string, displayName
 
 export async function updateGroupMemberName(groupId: string, memberId: string, displayName: string) {
   const supabase = getSupabaseClient();
-  const { user } = await requireGroupAdmin(groupId);
+  const { user } = await requireGroupOwner(groupId);
   const nextName = displayName.trim();
 
   if (!nextName || nextName.length > 80) {
@@ -155,7 +186,7 @@ export async function updateGroupMemberName(groupId: string, memberId: string, d
 
 export async function removeGroupMember(groupId: string, memberId: string) {
   const supabase = getSupabaseClient();
-  const { user } = await requireGroupAdmin(groupId);
+  const { user } = await requireGroupOwner(groupId);
 
   const { data: targetMember, error: targetError } = await supabase
     .from('group_members')

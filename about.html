@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About — PRISM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #1a1a2e;
+      background: #fff;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      width: 100%;
+    }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+    img { max-width: 100%; display: block; }
+
+    :root {
+      --navy: #0f0e2e;
+      --navy-light: #1a1848;
+      --blue: #4f6ef7;
+      --purple: #8b5cf6;
+      --violet: #a78bfa;
+      --lavender: #ede9fe;
+      --electric: #3b82f6;
+      --white: #ffffff;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-900: #111827;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(79, 110, 247, 0.35);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(79, 110, 247, 0.45);
+    }
+    .btn-outline {
+      background: transparent;
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.3);
+    }
+    .btn-outline:hover {
+      border-color: rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.06);
+    }
+    .btn-outline-dark {
+      background: transparent;
+      color: var(--navy);
+      border: 1.5px solid var(--gray-300);
+    }
+    .btn-outline-dark:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--purple);
+      margin-bottom: 12px;
+    }
+    .section-headline {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.25;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 17px;
+      color: var(--gray-500);
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: transparent;
+      padding: 0 24px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 80px;
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-logo img {
+      width: 68px;
+      height: 68px;
+      flex-shrink: 0;
+      object-fit: contain;
+    }
+    .header-logo-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .header-logo-text .brand {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+    .header-logo-text .sub {
+      font-size: 11px;
+      color: var(--gray-400);
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    nav {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    nav a {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.7);
+      transition: color 0.2s;
+    }
+    nav a:hover { color: #fff; }
+    nav a.active { color: #fff; }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .header-actions .login {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.7);
+    }
+    .header-actions .login:hover { color: #fff; }
+    .header-actions .btn {
+      padding: 10px 22px;
+      font-size: 14px;
+    }
+
+    .page-hero {
+      background: linear-gradient(140deg, var(--navy) 0%, #15134a 40%, #1a1660 70%, #0f0e2e 100%);
+      padding: 160px 24px 100px;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+    .page-hero::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -10%;
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(79,110,247,0.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .page-hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -5%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .page-hero .container {
+      position: relative;
+      z-index: 1;
+    }
+    .page-hero h1 {
+      font-size: 54px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 20px;
+    }
+    .page-hero p {
+      font-size: 18px;
+      color: rgba(255,255,255,0.65);
+      max-width: 580px;
+      margin: 0 auto 36px;
+      line-height: 1.7;
+    }
+
+    .about-section {
+      padding: 100px 24px;
+    }
+    .about-section:nth-child(even) {
+      background: var(--gray-50);
+    }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+      margin-top: 48px;
+    }
+    .about-grid.reverse .about-image { order: 2; }
+    .about-grid.reverse .about-text { order: 1; }
+    .about-text h3 {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 16px;
+    }
+    .about-text p {
+      font-size: 16px;
+      color: var(--gray-600);
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+    .about-image {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .about-image img {
+      width: 100%;
+      max-width: 460px;
+      border-radius: 20px;
+    }
+    .about-image-placeholder {
+      width: 100%;
+      max-width: 460px;
+      height: 340px;
+      background: linear-gradient(135deg, var(--lavender), #ddd6fe);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      color: var(--purple);
+    }
+
+    .values-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+      margin-top: 48px;
+    }
+    .value-card {
+      background: #fff;
+      border: 1px solid var(--gray-100);
+      border-radius: 18px;
+      padding: 36px 28px;
+      text-align: center;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .value-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+    }
+    .value-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: var(--lavender);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 24px;
+    }
+    .value-card h4 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 10px;
+    }
+    .value-card p {
+      font-size: 14px;
+      color: var(--gray-500);
+      line-height: 1.7;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+      margin-top: 48px;
+      text-align: center;
+    }
+    .team-member {
+      padding: 36px 20px;
+    }
+    .team-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .team-member h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .team-member .role {
+      font-size: 13px;
+      color: var(--purple);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .team-member p {
+      font-size: 14px;
+      color: var(--gray-500);
+      line-height: 1.6;
+    }
+
+    .cta-section {
+      background: linear-gradient(140deg, var(--navy) 0%, #15134a 40%, #1a1660 70%, #0f0e2e 100%);
+      padding: 100px 24px;
+      text-align: center;
+    }
+    .cta-section h2 {
+      font-size: 36px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+    .cta-section p {
+      font-size: 17px;
+      color: rgba(255,255,255,0.65);
+      max-width: 500px;
+      margin: 0 auto 32px;
+    }
+
+    footer {
+      background: var(--navy);
+      padding: 60px 24px 0;
+    }
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
+      gap: 40px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .footer-brand-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .footer-brand-top img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+    }
+    .brand-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      text-transform: uppercase;
+      line-height: 1.2;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: var(--gray-400);
+      text-transform: uppercase;
+    }
+    .footer-brand p {
+      font-size: 14px;
+      color: var(--gray-500);
+      line-height: 1.7;
+      max-width: 280px;
+    }
+    .footer-col h4 {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+    .footer-col a {
+      display: block;
+      font-size: 14px;
+      color: var(--gray-500);
+      margin-bottom: 12px;
+      transition: color 0.2s;
+    }
+    .footer-col a:hover { color: #fff; }
+    .footer-subscribe {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--gray-700);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .footer-subscribe input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 12px 14px;
+      font-family: inherit;
+      font-size: 14px;
+      color: #fff;
+      outline: none;
+    }
+    .footer-subscribe input::placeholder { color: var(--gray-500); }
+    .footer-subscribe button {
+      background: var(--blue);
+      border: none;
+      padding: 12px 16px;
+      cursor: pointer;
+      color: #fff;
+      display: flex;
+      align-items: center;
+    }
+    .footer-subscribe button:hover { background: var(--purple); }
+    .footer-bottom {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 0;
+    }
+    .footer-bottom p {
+      font-size: 13px;
+      color: var(--gray-500);
+    }
+    .footer-socials { display: flex; gap: 16px; }
+    .footer-socials a {
+      color: var(--gray-500);
+      transition: color 0.2s;
+    }
+    .footer-socials a:hover { color: #fff; }
+    .footer-socials svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .page-hero h1 { font-size: 36px; }
+      .about-grid { grid-template-columns: 1fr; gap: 40px; }
+      .about-grid.reverse .about-image { order: 1; }
+      .about-grid.reverse .about-text { order: 2; }
+      .values-grid { grid-template-columns: 1fr; }
+      .team-grid { grid-template-columns: 1fr; }
+      .footer-inner { grid-template-columns: 1fr 1fr; }
+      nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <a href="/" class="header-logo">
+        <img src="prism_logo_01.png" alt="PRISM">
+        <div class="header-logo-text">
+          <span class="brand">PRISM</span>
+          <span class="sub">Shared Expenses</span>
+        </div>
+      </a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/#features">Features</a>
+        <a href="/#how-it-works">How It Works</a>
+        <a href="/#pricing">Pricing</a>
+        <a href="/about" class="active">About</a>
+      </nav>
+      <div class="header-actions">
+        <a href="/login" class="login">Log in</a>
+        <a href="/signup" class="btn btn-primary">Sign up</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="page-hero">
+    <div class="container">
+      <span class="section-label">About Us</span>
+      <h1>Making shared expenses <span class="gradient-text">simple</span> for everyone.</h1>
+      <p>Prism was built to eliminate the awkwardness and complexity of splitting costs with friends, roommates, and loved ones.</p>
+    </div>
+  </section>
+
+  <section class="about-section">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-text">
+          <span class="section-label">Our Story</span>
+          <h3>Born from a real problem.</h3>
+          <p>Every roommate, every group trip, every shared dinner — someone ends up tracking IOUs in a messy notes app or a forgotten spreadsheet. We've all been there.</p>
+          <p>Prism started as a side project by a small team who wanted to build the tool they wished existed: something fast, fair, and frictionless. No manual math. No awkward "hey you still owe me" texts. Just clarity.</p>
+          <p>What began as a weekend prototype quickly turned into something bigger as friends, family, and strangers started asking for access. Today, Prism helps hundreds of groups stay on top of their shared expenses without the headache.</p>
+        </div>
+        <div class="about-image">
+          <div class="about-image-placeholder">💎</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-section">
+    <div class="container">
+      <div class="about-grid reverse">
+        <div class="about-image">
+          <div class="about-image-placeholder">🔒</div>
+        </div>
+        <div class="about-text">
+          <span class="section-label">Our Mission</span>
+          <h3>Fairness without the friction.</h3>
+          <p>We believe money between friends shouldn't damage relationships. Our mission is to make shared expense management so simple and transparent that you never have to think about it.</p>
+          <p>Every feature — from real-time balance tracking to automated settlement suggestions — is designed to answer one question instantly: "What do I owe, and who do I owe it to?"</p>
+          <p>No ads. No upsells. No selling your data. Just a tool that works, built by people who actually use it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-section">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-text">
+          <span class="section-label">Privacy First</span>
+          <h3>Your data belongs to you.</h3>
+          <p>Prism is built on a foundation of trust. We use industry-standard encryption, never share your data with third parties, and give you full control over your information.</p>
+          <p>Every group is isolated. Every expense is visible only to the people you choose. When you leave a group, your data leaves with you.</p>
+          <p>We don't track you. We don't sell you. We just help you split the bill.</p>
+        </div>
+        <div class="about-image">
+          <div class="about-image-placeholder">🛡️</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-section" style="background: var(--gray-50);">
+    <div class="container">
+      <div style="text-align:center;">
+        <span class="section-label">Our Values</span>
+        <h2 class="section-headline">What drives us every day.</h2>
+        <p class="section-sub">The principles that guide every decision we make.</p>
+      </div>
+      <div class="values-grid">
+        <div class="value-card">
+          <div class="value-icon">⚡</div>
+          <h4>Simplicity</h4>
+          <p>If a feature isn't immediately intuitive, it doesn't ship. We believe the best tools are the ones you don't have to think about.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🤝</div>
+          <h4>Fairness</h4>
+          <p>Every split should be equitable and transparent. No hidden fees, no confusing math, no surprises.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🔐</div>
+          <h4>Trust</h4>
+          <p>Your financial data is sensitive. We treat it with the respect it deserves through end-to-end encryption and strict privacy controls.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-section">
+    <div class="container">
+      <div style="text-align:center;">
+        <span class="section-label">The Team</span>
+        <h2 class="section-headline">Built by people who use it.</h2>
+        <p class="section-sub">A small, remote team passionate about making group finances effortless.</p>
+      </div>
+      <div class="team-grid">
+        <div class="team-member">
+          <div class="team-avatar">DD</div>
+          <h4>Dylan H.</h4>
+          <div class="role">Founder & Developer</div>
+          <p>Building the product full-time. Obsessed with clean UX and fair algorithms.</p>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar">PR</div>
+          <h4>Prism Team</h4>
+          <div class="role">Design & Engineering</div>
+          <p>A distributed team of designers and engineers who believe shared expenses should be simple.</p>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar">💬</div>
+          <h4>You?</h4>
+          <div class="role">Community</div>
+          <p>Every user who shares feedback helps shape what Prism becomes. This product is built for you.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to simplify your shared expenses?</h2>
+      <p>Join hundreds of groups already using Prism to track, split, and settle with zero stress.</p>
+      <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+        <a href="/signup" class="btn btn-primary">Get started free</a>
+        <a href="/#features" class="btn btn-outline">See how it works</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-brand-top">
+          <img src="prism_logo_01.png" alt="Prism logo">
+          <div>
+            <div class="brand-name">Prism</div>
+            <div class="brand-sub">Shared Expenses</div>
+          </div>
+        </div>
+        <p>Making shared expenses simple, fair, and stress-free for everyone.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="/#features">Features</a>
+        <a href="/#how-it-works">How It Works</a>
+        <a href="/#pricing">Pricing</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="/about">About</a>
+        <a href="/blog">Blog</a>
+        <a href="/careers">Careers</a>
+      </div>
+      <div class="footer-col">
+        <h4>Support</h4>
+        <a href="/help">Help Center</a>
+        <a href="/contact">Contact Us</a>
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms of Service</a>
+      </div>
+      <div class="footer-col">
+        <h4>Stay updated</h4>
+        <div class="footer-subscribe">
+          <input type="email" placeholder="Enter your email">
+          <button aria-label="Subscribe">
+            <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 9H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M11 5L15 9L11 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Prism. All rights reserved.</p>
+      <div class="footer-socials">
+        <a href="https://x.com/prism" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </a>
+        <a href="https://instagram.com/prism" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+          </svg>
+        </a>
+        <a href="https://facebook.com/prism" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

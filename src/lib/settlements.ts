@@ -1,29 +1,11 @@
 import { getSupabaseClient } from './supabaseClient';
+import { requireGroupOwner } from './groups';
 import { logActivity } from './database';
 import type { Settlement } from './database.types';
 
-async function requireSettlementAccess(groupId: string, memberIds: string[]) {
-  const supabase = getSupabaseClient();
-  const user = await import('./auth').then((m) => m.getCurrentUser());
-  if (!user.data) throw new Error('Not authenticated.');
-
-  const { data: membership, error } = await supabase
-    .from('group_members')
-    .select('id, role')
-    .eq('group_id', groupId)
-    .eq('user_id', user.data.id)
-    .eq('status', 'active')
-    .single();
-
-  if (error || !membership) throw new Error('Not authenticated.');
-
-  const isAdmin = ['owner', 'admin'].includes(membership.role);
-  const isInvolved = memberIds.includes(membership.id);
-  if (!isAdmin && !isInvolved) {
-    throw new Error('Only the people involved, owners, or admins can record this payment.');
-  }
-
-  return user.data;
+async function requireSettlementOwnerAccess(groupId: string) {
+  const { user } = await requireGroupOwner(groupId);
+  return user;
 }
 
 export async function markSettlementPaid(
@@ -33,7 +15,7 @@ export async function markSettlementPaid(
   amount: number,
 ) {
   const supabase = getSupabaseClient();
-  const user = await requireSettlementAccess(groupId, [fromMemberId, toMemberId]);
+  const user = await requireSettlementOwnerAccess(groupId);
 
   const { data, error } = await supabase
     .from('settlements')
@@ -81,7 +63,7 @@ export async function markSplitSettled(splitId: string) {
 
   if (splitError || !split) throw new Error('Split not found.');
   const expense = split.expenses as unknown as { group_id: string };
-  await requireSettlementAccess(expense.group_id, [split.member_id]);
+  const user = await requireSettlementOwnerAccess(expense.group_id);
 
   const { error } = await supabase
     .from('expense_splits')
@@ -89,4 +71,5 @@ export async function markSplitSettled(splitId: string) {
     .eq('id', splitId);
 
   if (error) throw new Error(error.message);
+  await logActivity(expense.group_id, user.id, 'split_settled', { split_id: splitId });
 }

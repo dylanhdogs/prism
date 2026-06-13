@@ -1,6 +1,6 @@
 import { getSupabaseClient } from './supabaseClient';
 import { getCurrentUser } from './auth';
-import { requireGroupAdmin } from './groups';
+import { requireGroupOwner } from './groups';
 import { logActivity } from './database';
 import type { Invitation } from './database.types';
 
@@ -54,7 +54,7 @@ export async function sendInviteEmail(recipientEmail: string, inviteLink: string
 
 export async function createInvite(groupId: string, invitedEmail?: string) {
   const supabase = getSupabaseClient();
-  const { user } = await requireGroupAdmin(groupId);
+  const { user } = await requireGroupOwner(groupId);
   const groupName = await getGroupName(groupId);
 
   const token = generateToken();
@@ -89,7 +89,7 @@ export function buildInviteUrl(token: string) {
 
 export async function getGroupInvitations(groupId: string) {
   const supabase = getSupabaseClient();
-  await requireGroupAdmin(groupId);
+  await requireGroupOwner(groupId);
 
   const { data, error } = await supabase
     .from('invitations')
@@ -103,7 +103,7 @@ export async function getGroupInvitations(groupId: string) {
 
 export async function cancelInvite(groupId: string, inviteId: string) {
   const supabase = getSupabaseClient();
-  const { user } = await requireGroupAdmin(groupId);
+  const { user } = await requireGroupOwner(groupId);
 
   const { data: invite, error: inviteError } = await supabase
     .from('invitations')

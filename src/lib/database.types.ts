@@ -26,6 +26,11 @@ export interface Database {
         Insert: Omit<ExpenseSplit, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<ExpenseSplit, 'id'>>;
       };
+      expense_receipts: {
+        Row: ExpenseReceipt;
+        Insert: Omit<ExpenseReceipt, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<ExpenseReceipt, 'id'>>;
+      };
       settlements: {
         Row: Settlement;
         Insert: Omit<Settlement, 'id' | 'created_at'>;
@@ -108,6 +113,19 @@ export interface ExpenseSplit {
   member_id: string;
   amount_owed: number;
   is_settled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExpenseReceipt {
+  id: string;
+  expense_id: string;
+  group_id: string;
+  file_path: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  uploaded_by: string;
   created_at: string;
   updated_at: string;
 }

@@ -146,10 +146,10 @@ In your Supabase dashboard:
 
 - **Never** commit `.env` to git. Only `.env.example` is committed.
 - The `VITE_` prefix makes Vite expose the variable to client code.
-- Do not store admin passwords or Supabase service role keys in frontend environment variables.
+- Do not store owner passwords or Supabase service role keys in frontend environment variables.
 - Keep `RESEND_API_KEY` private. It should only live in local `.env` or Cloudflare environment variables.
 
-### Developer admin access
+### Developer owner access
 
 Use `VITE_DEV_ADMIN_EMAIL` when you need one dependable development account that avoids repeated signup confirmation emails.
 
@@ -175,6 +175,15 @@ Prism now sends invite emails through [Resend](https://resend.com/), which is th
 
 The app still creates the shareable invite link, so you can copy it even if you choose not to email it.
 
+### Receipt uploads
+
+Prism stores receipt files in Supabase Storage and receipt details in the database.
+
+1. Run `014_expense_receipts.sql` after the earlier migrations.
+2. The migration creates a private Supabase Storage bucket named `receipts`.
+3. If you create the bucket manually instead, make sure it is private and named exactly `receipts`.
+4. Receipt uploads support images and PDFs up to 10 MB.
+
 ---
 
 ## Database Migrations
@@ -195,6 +204,8 @@ All migrations are in `supabase/migrations/`. Run them in order:
 | `010_guest_invite_rpc.sql` | Browser-callable guest invite RPC |
 | `011_security_hardening.sql` | Stricter member and payment permissions |
 | `012_persistent_guest_accounts.sql` | Durable browser guest access + guest group membership |
+| `013_owner_only_write_access.sql` | Owner-only edit permissions for groups, invites, expenses, and settlements |
+| `014_expense_receipts.sql` | Private receipt uploads linked to expenses |
 
 Each file includes:
 - `CREATE TABLE` statements
@@ -256,7 +267,7 @@ In Cloudflare Pages dashboard → your project → **Settings → Environment va
 |----------|-------|
 | `VITE_SUPABASE_URL` | Your Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Your Supabase anon key |
-| `VITE_DEV_ADMIN_EMAIL` | Optional developer admin email |
+| `VITE_DEV_ADMIN_EMAIL` | Optional developer owner email |
 | `RESEND_API_KEY` | Resend API key for invite emails |
 | `RESEND_FROM_EMAIL` | Verified Resend sender address |
 | `APP_URL` | `https://your-app.pages.dev` |

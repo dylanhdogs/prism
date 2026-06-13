@@ -41,8 +41,9 @@
             <p id="group-meta" style="color:var(--gray-400);font-size:14px;"></p>
           </div>
           <div class="group-actions">
-            <button class="btn btn-primary btn-sm" onclick="showAddExpenseModal()">+ Add Expense</button>
+            <button class="btn btn-primary btn-sm" id="add-expense-btn-main" onclick="showAddExpenseModal()" style="display:none;">+ Add Expense</button>
             <button class="btn btn-secondary btn-sm" id="invite-btn" onclick="showAddMemberModal()" style="display:none;">+ Invite</button>
+            <button class="btn btn-secondary btn-sm" id="group-settings-btn" onclick="showGroupSettingsModal()" style="display:none;">Settings</button>
           </div>
         </div>
 
@@ -112,11 +113,36 @@
     </main>
   </div>
 
+  <!-- Group Settings Modal -->
+  <div id="group-settings-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h2>Group settings</h2>
+      <form id="group-settings-form">
+        <div class="form-group">
+          <label for="group-settings-name">Group name</label>
+          <input type="text" id="group-settings-name" maxlength="100" required>
+        </div>
+        <div class="form-group">
+          <label for="group-settings-description">Description</label>
+          <textarea id="group-settings-description" maxlength="500" rows="4" placeholder="Add a short note about this group"></textarea>
+          <span class="form-hint">Only the group owner can change these settings.</span>
+        </div>
+        <div id="group-settings-error" class="form-error" style="display:none;"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeGroupSettingsModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="group-settings-save-btn">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Add Expense Modal -->
   <div id="add-expense-modal" class="modal-overlay" style="display:none;">
     <div class="modal">
-      <h2>Add expense</h2>
+      <h2 id="expense-modal-title">Add expense</h2>
       <form id="add-expense-form">
+        <input type="hidden" id="expense-id">
+        <input type="hidden" id="receipt-remove-flag" value="false">
         <div class="form-group">
           <label for="expense-title">Title</label>
           <input type="text" id="expense-title" placeholder="e.g. Dinner" required>
@@ -134,11 +160,33 @@
           <select id="expense-payer" required></select>
         </div>
         <div class="form-group">
+          <label for="expense-split-type">Split type</label>
+          <select id="expense-split-type">
+            <option value="equal">Equal split</option>
+            <option value="custom">Custom amounts</option>
+          </select>
+        </div>
+        <div class="split-tools">
+          <label class="split-option">
+            <input type="checkbox" id="exclude-payer-from-split">
+            <span>Exclude payer from split</span>
+          </label>
+          <button type="button" class="btn btn-secondary btn-sm" id="fill-split-evenly-btn">Fill evenly</button>
+        </div>
+        <p id="split-preview" class="form-hint" style="margin-top:-4px;">For custom splits, leave one amount blank and Prism fills the rest.</p>
+        <div class="form-group">
           <label>Split between</label>
           <div id="split-members" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
         </div>
+        <div class="form-group">
+          <label for="expense-receipt">Receipt</label>
+          <input type="file" id="expense-receipt" accept="image/*,application/pdf">
+          <span class="form-hint">Optional image or PDF, up to 10 MB.</span>
+          <div id="receipt-current" class="receipt-current" style="display:none;"></div>
+        </div>
         <div id="add-expense-error" class="form-error" style="display:none;"></div>
         <div class="modal-actions">
+          <button type="button" class="btn btn-danger" id="delete-expense-btn" onclick="deleteCurrentExpense()" style="display:none;margin-right:auto;">Delete</button>
           <button type="button" class="btn btn-secondary" onclick="closeAddExpenseModal()">Cancel</button>
           <button type="submit" class="btn btn-primary" id="add-expense-btn">Add expense</button>
         </div>
@@ -202,8 +250,8 @@
 
   <script type="module">
     import { getPageAuthState, logOut } from '/src/lib/auth.ts';
-    import { getGroupById, getGroupMembers, removeGroupMember, updateGroupMemberName } from '/src/lib/groups.ts';
-    import { getGroupExpenses, createExpense } from '/src/lib/expenses.ts';
+    import { getGroupById, getGroupMembers, removeGroupMember, updateGroupMemberName, updateGroupSettings } from '/src/lib/groups.ts';
+    import { getGroupExpenses, createExpense, deleteExpense, getReceiptViewUrl, updateExpense } from '/src/lib/expenses.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
     import { getGroupSettlements, markSettlementPaid } from '/src/lib/settlements.ts';
     import { buildInviteUrl, cancelInvite, createInvite, getGroupInvitations, sendInviteEmail } from '/src/lib/invites.ts';
@@ -214,7 +262,9 @@
     let currentMemberId = '';
     let currentUserRole = 'member';
     let members = [];
+    let expenses = [];
     let invites = [];
+    let currentGroup = null;
     let currentInviteGroupName = '';
 
     async function init() {
@@ -247,6 +297,7 @@
     async function loadGroup() {
       try {
         const group = await getGroupById(groupId);
+        currentGroup = group;
         document.getElementById('group-title').textContent = group.name;
         document.getElementById('group-name').textContent = group.name;
         document.getElementById('group-meta').textContent = group.description || 'Shared expenses group';
@@ -256,7 +307,10 @@
         const currentMember = members.find(m => m.user_id === currentUserId);
         currentMemberId = currentMember?.id || '';
         currentUserRole = currentMember?.role || 'member';
-        document.getElementById('invite-btn').style.display = ['owner', 'admin'].includes(currentUserRole) ? 'inline-flex' : 'none';
+        const isOwner = currentUserRole === 'owner';
+        document.getElementById('add-expense-btn-main').style.display = isOwner ? 'inline-flex' : 'none';
+        document.getElementById('invite-btn').style.display = isOwner ? 'inline-flex' : 'none';
+        document.getElementById('group-settings-btn').style.display = isOwner ? 'inline-flex' : 'none';
         await loadBalances();
         await loadExpenses();
         await loadMembers();
@@ -326,7 +380,7 @@
       document.getElementById('expenses-loading').style.display = 'flex';
       document.getElementById('expenses-content').style.display = 'none';
       try {
-        const expenses = await getGroupExpenses(groupId);
+        expenses = await getGroupExpenses(groupId);
         document.getElementById('expenses-loading').style.display = 'none';
         document.getElementById('expenses-content').style.display = 'block';
         const el = document.getElementById('expenses-list');
@@ -337,13 +391,25 @@
         el.innerHTML = expenses.map(e => `
           <div class="expense-row">
             <div class="expense-info">
-              <span class="expense-title">${escapeHtml(e.title)}</span>
+              <span class="expense-title">${escapeHtml(e.title)} ${getExpenseReceipt(e) ? '<span class="receipt-pill">Receipt</span>' : ''}</span>
               <span class="expense-meta">Paid by ${e.paid_by?.display_name || 'Unknown'} on ${new Date(e.expense_date).toLocaleDateString()}</span>
             </div>
-            <div class="expense-amount">$${Number(e.amount).toFixed(2)}</div>
+            <div class="expense-amount">
+              $${Number(e.amount).toFixed(2)}
+              ${(currentUserRole === 'owner' || getExpenseReceipt(e)) ? `
+                <div class="expense-actions">
+                  ${getExpenseReceipt(e) ? `<button type="button" class="btn btn-secondary btn-sm" data-expense-action="view-receipt" data-expense-id="${e.id}">View receipt</button>` : ''}
+                  ${currentUserRole === 'owner' ? `
+                  <button type="button" class="btn btn-secondary btn-sm" data-expense-action="edit" data-expense-id="${e.id}">Edit</button>
+                  <button type="button" class="btn btn-danger btn-sm" data-expense-action="delete" data-expense-id="${e.id}">Delete</button>
+                  ` : ''}
+                </div>
+              ` : ''}
+            </div>
           </div>
         `).join('');
       } catch (err) {
+        expenses = [];
         document.getElementById('expenses-loading').style.display = 'none';
         document.getElementById('expenses-content').style.display = 'block';
         document.getElementById('expenses-list').innerHTML = '<div class="form-error">Error loading expenses</div>';
@@ -366,7 +432,7 @@
               <div class="member-avatar">${escapeHtml((m.display_name || '?')[0].toUpperCase())}</div>
               <div>
                 <div class="member-name">${escapeHtml(m.display_name || 'Invited')}</div>
-                <div class="member-role">${escapeHtml(m.role)}${m.user_id === currentUserId ? ' (you)' : ''}</div>
+                <div class="member-role">${escapeHtml(m.role === 'owner' ? 'owner' : 'member')}${m.user_id === currentUserId ? ' (you)' : ''}</div>
               </div>
             </div>
             ${canManage ? `
@@ -400,7 +466,7 @@
     async function loadInvites() {
       const invitesCard = document.getElementById('invites-card');
       const invitesList = document.getElementById('invites-list');
-      if (!['owner', 'admin'].includes(currentUserRole) || !groupId) {
+      if (currentUserRole !== 'owner' || !groupId) {
         invitesCard.style.display = 'none';
         return;
       }
@@ -473,13 +539,18 @@
     }
 
     function canSettle(settlement) {
-      return ['owner', 'admin'].includes(currentUserRole)
-        || settlement.fromMemberId === currentMemberId
-        || settlement.toMemberId === currentMemberId;
+      return currentUserRole === 'owner';
     }
 
     function canManageMembers() {
-      return ['owner', 'admin'].includes(currentUserRole);
+      return currentUserRole === 'owner';
+    }
+
+    function updateGroupHeader(group) {
+      document.getElementById('group-title').textContent = group.name;
+      document.getElementById('group-name').textContent = group.name;
+      document.getElementById('group-meta').textContent = group.description || 'Shared expenses group';
+      currentInviteGroupName = group.name;
     }
 
     // ── Tab switching ──
@@ -504,6 +575,46 @@
     });
 
     // ── Add Expense Modal ──
+    window.showGroupSettingsModal = function() {
+      if (currentUserRole !== 'owner' || !currentGroup) return;
+      document.getElementById('group-settings-name').value = currentGroup.name || '';
+      document.getElementById('group-settings-description').value = currentGroup.description || '';
+      document.getElementById('group-settings-error').style.display = 'none';
+      document.getElementById('group-settings-modal').style.display = 'flex';
+      document.getElementById('group-settings-name').focus();
+    };
+
+    window.closeGroupSettingsModal = function() {
+      document.getElementById('group-settings-modal').style.display = 'none';
+      document.getElementById('group-settings-error').style.display = 'none';
+      document.getElementById('group-settings-form').reset();
+    };
+
+    document.getElementById('group-settings-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const btn = document.getElementById('group-settings-save-btn');
+      const errorEl = document.getElementById('group-settings-error');
+      const name = document.getElementById('group-settings-name').value;
+      const description = document.getElementById('group-settings-description').value;
+
+      btn.disabled = true;
+      btn.classList.add('btn-loading');
+      errorEl.style.display = 'none';
+
+      try {
+        const group = await updateGroupSettings(groupId, name, description);
+        currentGroup = group;
+        updateGroupHeader(group);
+        window.closeGroupSettingsModal();
+      } catch (err) {
+        errorEl.textContent = err.message || 'Unable to save group settings.';
+        errorEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('btn-loading');
+      }
+    });
+
     window.closeEditMemberModal = function() {
       document.getElementById('edit-member-modal').style.display = 'none';
       document.getElementById('edit-member-error').style.display = 'none';
@@ -633,27 +744,439 @@
       }
     });
 
-    window.showAddExpenseModal = function() {
-      document.getElementById('add-expense-modal').style.display = 'flex';
-      const payerSelect = document.getElementById('expense-payer');
-      const splitDiv = document.getElementById('split-members');
-      payerSelect.innerHTML = members.map(m => `<option value="${m.id}">${escapeHtml(m.display_name || 'Unknown')}</option>`).join('');
-      splitDiv.innerHTML = members.map(m => `
-        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
-          <input type="checkbox" value="${m.id}" checked> ${escapeHtml(m.display_name || 'Unknown')}
-        </label>
-      `).join('');
-      document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('expenses-list')?.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-expense-action]');
+      if (!button) return;
+
+      const expenseId = button.dataset.expenseId;
+      if (!expenseId) return;
+
+      if (button.dataset.expenseAction === 'view-receipt') {
+        await viewExpenseReceipt(expenseId, button);
+        return;
+      }
+
+      if (button.dataset.expenseAction === 'edit') {
+        window.showAddExpenseModal(expenseId);
+        return;
+      }
+
+      if (button.dataset.expenseAction === 'delete') {
+        const expense = expenses.find((item) => item.id === expenseId);
+        const confirmed = window.confirm(`Delete ${expense?.title || 'this expense'}?`);
+        if (!confirmed) return;
+
+        button.disabled = true;
+        try {
+          await deleteExpense(expenseId);
+          await refreshGroupData();
+        } catch (err) {
+          window.alert(err.message || 'Unable to delete expense.');
+        } finally {
+          button.disabled = false;
+        }
+      }
+    });
+
+    function getExpenseReceipt(expense) {
+      if (!expense?.receipt) return null;
+      return Array.isArray(expense.receipt) ? expense.receipt[0] || null : expense.receipt;
+    }
+
+    async function viewExpenseReceipt(expenseId, button = null) {
+      const expense = expenses.find((item) => item.id === expenseId);
+      const receipt = getExpenseReceipt(expense);
+      if (!receipt) {
+        window.alert('No receipt is attached to this expense.');
+        return;
+      }
+
+      if (button) button.disabled = true;
+      try {
+        const url = await getReceiptViewUrl(receipt);
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } catch (err) {
+        window.alert(err.message || 'Unable to open receipt.');
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+
+    window.viewCurrentReceipt = async function() {
+      const expenseId = document.getElementById('expense-id').value;
+      if (!expenseId) return;
+      await viewExpenseReceipt(expenseId);
     };
+
+    window.removeCurrentReceipt = function() {
+      document.getElementById('receipt-remove-flag').value = 'true';
+      document.getElementById('expense-receipt').value = '';
+      renderReceiptControls(null, true);
+    };
+
+    function renderReceiptControls(receipt, markedForRemoval = false) {
+      const currentEl = document.getElementById('receipt-current');
+      if (markedForRemoval) {
+        currentEl.style.display = 'block';
+        currentEl.innerHTML = `
+          <span>Receipt will be removed when you save.</span>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="undoRemoveCurrentReceipt()">Undo</button>
+        `;
+        return;
+      }
+
+      if (!receipt) {
+        currentEl.style.display = 'none';
+        currentEl.innerHTML = '';
+        return;
+      }
+
+      if (!receipt.file_path) {
+        currentEl.style.display = 'block';
+        currentEl.innerHTML = `
+          <span>Selected: ${escapeHtml(receipt.file_name)}</span>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="clearSelectedReceipt()">Clear</button>
+        `;
+        return;
+      }
+
+      currentEl.style.display = 'block';
+      currentEl.innerHTML = `
+        <span>${escapeHtml(receipt.file_name)}</span>
+        <div class="receipt-actions">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="viewCurrentReceipt()">View</button>
+          <button type="button" class="btn btn-danger btn-sm" onclick="removeCurrentReceipt()">Remove</button>
+        </div>
+      `;
+    }
+
+    window.clearSelectedReceipt = function() {
+      document.getElementById('expense-receipt').value = '';
+      const expenseId = document.getElementById('expense-id').value;
+      const expense = expenses.find((item) => item.id === expenseId);
+      renderReceiptControls(getExpenseReceipt(expense));
+    };
+
+    window.undoRemoveCurrentReceipt = function() {
+      const expenseId = document.getElementById('expense-id').value;
+      const expense = expenses.find((item) => item.id === expenseId);
+      document.getElementById('receipt-remove-flag').value = 'false';
+      renderReceiptControls(getExpenseReceipt(expense));
+    };
+
+    function getSelectedReceiptFile() {
+      const fileInput = document.getElementById('expense-receipt');
+      return fileInput.files?.[0] || null;
+    }
+
+    function validateReceiptFile(file) {
+      if (!file) return;
+      const isAllowedType = file.type.startsWith('image/') || file.type === 'application/pdf';
+      if (!isAllowedType) throw new Error('Upload an image or PDF receipt.');
+      if (file.size > 10 * 1024 * 1024) throw new Error('Receipt file is too large. Keep it under 10 MB.');
+    }
+
+    function roundMoney(value) {
+      return Math.round(Number(value || 0) * 100) / 100;
+    }
+
+    function getSplitPayerId() {
+      return document.getElementById('expense-payer').value;
+    }
+
+    function getSplitCheckboxes() {
+      return Array.from(document.querySelectorAll('#split-members [data-expense-member-check]'));
+    }
+
+    function getSplitParticipants() {
+      const excludePayer = document.getElementById('exclude-payer-from-split').checked;
+      const payerId = getSplitPayerId();
+      return getSplitCheckboxes()
+        .filter((checkbox) => checkbox.checked)
+        .map((checkbox) => checkbox.value)
+        .filter((memberId) => !(excludePayer && memberId === payerId));
+    }
+
+    function applyExcludePayerState() {
+      const excludePayer = document.getElementById('exclude-payer-from-split').checked;
+      const payerId = getSplitPayerId();
+
+      getSplitCheckboxes().forEach((checkbox) => {
+        if (checkbox.value === payerId) {
+          checkbox.disabled = excludePayer;
+          if (excludePayer) checkbox.checked = false;
+        }
+      });
+    }
+
+    function updateExpenseSplitPreview() {
+      const previewEl = document.getElementById('split-preview');
+      const splitType = document.getElementById('expense-split-type').value;
+      const amount = parseFloat(document.getElementById('expense-amount').value) || 0;
+      if (splitType !== 'custom') {
+        const participants = getSplitParticipants();
+        if (participants.length === 0 || !amount) {
+          previewEl.textContent = 'Choose custom split to leave one amount blank and Prism fills the rest.';
+          return;
+        }
+
+        const each = roundMoney(amount / participants.length).toFixed(2);
+        previewEl.textContent = `Equal split preview: ${participants.length} people, $${each} each.`;
+        return;
+      }
+
+      const rows = Array.from(document.querySelectorAll('#split-members .split-member-row'));
+      const selectedRows = rows.filter((row) => row.querySelector('[data-expense-member-check]')?.checked);
+      const autoRows = selectedRows.filter((row) => {
+        const amountInput = row.querySelector('[data-expense-member-amount]');
+        return !amountInput.value.trim() || amountInput.dataset.autoFilled === 'true';
+      });
+      const enteredTotal = selectedRows.reduce((sum, row) => {
+        const amountInput = row.querySelector('[data-expense-member-amount]');
+        if (amountInput.dataset.autoFilled === 'true') return sum;
+        const value = parseFloat(amountInput.value);
+        return Number.isFinite(value) ? sum + value : sum;
+      }, 0);
+      const remaining = roundMoney(amount - enteredTotal);
+
+      if (selectedRows.length === 0 || !amount) {
+        previewEl.textContent = 'Leave one amount blank and Prism fills the rest.';
+        return;
+      }
+
+      if (autoRows.length > 1) {
+        previewEl.textContent = 'Leave only one amount blank so Prism can fill the rest.';
+        return;
+      }
+
+      if (autoRows.length === 1) {
+        if (remaining < 0) {
+          previewEl.textContent = `Entered amounts exceed the total by $${Math.abs(remaining).toFixed(2)}.`;
+          return;
+        }
+        previewEl.textContent = `Prism will fill the remaining $${Math.max(0, remaining).toFixed(2)} automatically.`;
+        return;
+      }
+
+      previewEl.textContent = `Entered amounts total $${roundMoney(enteredTotal).toFixed(2)}.`;
+    }
+
+    function fillRemainingCustomSplit() {
+      const splitType = document.getElementById('expense-split-type').value;
+      if (splitType !== 'custom') return;
+
+      const amount = parseFloat(document.getElementById('expense-amount').value) || 0;
+      const selectedRows = Array.from(document.querySelectorAll('#split-members .split-member-row'))
+        .filter((row) => row.querySelector('[data-expense-member-check]')?.checked);
+      const autoRows = selectedRows.filter((row) => {
+        const amountInput = row.querySelector('[data-expense-member-amount]');
+        return !amountInput.value.trim() || amountInput.dataset.autoFilled === 'true';
+      });
+
+      if (autoRows.length !== 1 || !amount) return;
+
+      const enteredTotal = selectedRows.reduce((sum, row) => {
+        const amountInput = row.querySelector('[data-expense-member-amount]');
+        if (amountInput.dataset.autoFilled === 'true') return sum;
+        const value = parseFloat(amountInput.value);
+        return Number.isFinite(value) ? sum + value : sum;
+      }, 0);
+      const remaining = roundMoney(amount - enteredTotal);
+      const amountInput = autoRows[0].querySelector('[data-expense-member-amount]');
+
+      if (remaining < 0) {
+        amountInput.value = '';
+        delete amountInput.dataset.autoFilled;
+        return;
+      }
+
+      amountInput.value = remaining.toFixed(2);
+      amountInput.dataset.autoFilled = 'true';
+    }
+
+    function fillSplitEvenly() {
+      const splitType = document.getElementById('expense-split-type').value;
+      if (splitType !== 'custom') {
+        document.getElementById('expense-split-type').value = 'custom';
+      }
+
+      const participants = getSplitParticipants();
+      const amount = parseFloat(document.getElementById('expense-amount').value) || 0;
+      if (participants.length === 0 || !amount) return;
+
+      const evenShares = participants.map((_, index) => {
+        const base = roundMoney(amount / participants.length);
+        return index === 0 ? roundMoney(base + roundMoney(amount - base * participants.length)) : base;
+      });
+      const rows = Array.from(document.querySelectorAll('#split-members .split-member-row'));
+      rows.forEach((row) => {
+        const checkbox = row.querySelector('[data-expense-member-check]');
+        const amountInput = row.querySelector('[data-expense-member-amount]');
+        if (!checkbox.checked || checkbox.disabled) {
+          amountInput.value = '';
+          return;
+        }
+        const participantIndex = participants.indexOf(checkbox.value);
+        amountInput.value = evenShares[participantIndex].toFixed(2);
+        delete amountInput.dataset.autoFilled;
+      });
+      syncExpenseSplitMode();
+      updateExpenseSplitPreview();
+    }
+
+    function renderExpenseSplitMembers(expense = null) {
+      const splitDiv = document.getElementById('split-members');
+      const selectedIds = expense?.splits?.map((split) => split.member_id) || members.map((m) => m.id);
+      const amountByMemberId = new Map((expense?.splits || []).map((split) => [split.member_id, Number(split.amount_owed)]));
+
+      splitDiv.innerHTML = members.map(m => {
+        const amountValue = amountByMemberId.has(m.id)
+          ? amountByMemberId.get(m.id).toFixed(2)
+          : '';
+        return `
+          <div class="split-member-row">
+            <label class="split-member-check">
+              <input type="checkbox" value="${m.id}" data-expense-member-check ${selectedIds.includes(m.id) ? 'checked' : ''}>
+              <span class="split-member-name">${escapeHtml(m.display_name || 'Unknown')}</span>
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              class="split-member-amount"
+              data-expense-member-amount
+              value="${amountValue}"
+            >
+          </div>
+        `;
+      }).join('');
+    }
+
+    function syncExpenseSplitMode() {
+      const splitType = document.getElementById('expense-split-type').value;
+      const isCustom = splitType === 'custom';
+
+      document.querySelectorAll('#split-members .split-member-row').forEach((row) => {
+        const checkbox = row.querySelector('[data-expense-member-check]');
+        const amountInput = row.querySelector('[data-expense-member-amount]');
+        const enabled = isCustom && checkbox.checked;
+        amountInput.style.display = isCustom ? 'block' : 'none';
+        amountInput.disabled = !enabled;
+        if (!enabled) {
+          amountInput.value = '';
+          delete amountInput.dataset.autoFilled;
+        }
+      });
+      fillRemainingCustomSplit();
+      updateExpenseSplitPreview();
+    }
+
+    function fillExpenseForm(expense = null) {
+      const titleEl = document.getElementById('expense-modal-title');
+      const submitBtn = document.getElementById('add-expense-btn');
+      const deleteBtn = document.getElementById('delete-expense-btn');
+      const expenseIdEl = document.getElementById('expense-id');
+      const payerSelect = document.getElementById('expense-payer');
+      const splitTypeSelect = document.getElementById('expense-split-type');
+      const isEdit = Boolean(expense);
+
+      titleEl.textContent = isEdit ? 'Edit expense' : 'Add expense';
+      submitBtn.textContent = isEdit ? 'Save changes' : 'Add expense';
+      deleteBtn.style.display = isEdit ? 'inline-flex' : 'none';
+      expenseIdEl.value = expense?.id || '';
+      splitTypeSelect.value = expense?.split_type || 'equal';
+      document.getElementById('receipt-remove-flag').value = 'false';
+      document.getElementById('expense-receipt').value = '';
+
+      payerSelect.innerHTML = members.map(m => `<option value="${m.id}">${escapeHtml(m.display_name || 'Unknown')}</option>`).join('');
+      renderExpenseSplitMembers(expense);
+
+      document.getElementById('expense-title').value = expense?.title || '';
+      document.getElementById('expense-amount').value = expense ? String(expense.amount) : '';
+      document.getElementById('expense-date').value = expense?.expense_date?.split('T')[0] || new Date().toISOString().split('T')[0];
+      payerSelect.value = expense?.paid_by_member_id || members[0]?.id || '';
+      document.getElementById('exclude-payer-from-split').checked = false;
+      renderReceiptControls(getExpenseReceipt(expense));
+      applyExcludePayerState();
+      syncExpenseSplitMode();
+    }
+
+    window.showAddExpenseModal = function(expenseId) {
+      const expense = expenseId ? expenses.find((item) => item.id === expenseId) : null;
+      fillExpenseForm(expense || null);
+      document.getElementById('add-expense-error').style.display = 'none';
+      document.getElementById('add-expense-modal').style.display = 'flex';
+    };
+
     window.closeAddExpenseModal = function() {
       document.getElementById('add-expense-modal').style.display = 'none';
       document.getElementById('add-expense-error').style.display = 'none';
+      document.getElementById('add-expense-form').reset();
+      document.getElementById('expense-id').value = '';
+      document.getElementById('delete-expense-btn').style.display = 'none';
+      document.getElementById('expense-modal-title').textContent = 'Add expense';
+      document.getElementById('add-expense-btn').textContent = 'Add expense';
+      document.getElementById('expense-split-type').value = 'equal';
+      document.getElementById('exclude-payer-from-split').checked = false;
+      document.getElementById('receipt-remove-flag').value = 'false';
+      renderReceiptControls(null);
+      applyExcludePayerState();
+      updateExpenseSplitPreview();
     };
+
+    document.getElementById('expense-split-type')?.addEventListener('change', () => {
+      syncExpenseSplitMode();
+    });
+
+    document.getElementById('fill-split-evenly-btn')?.addEventListener('click', () => {
+      fillSplitEvenly();
+    });
+
+    document.getElementById('exclude-payer-from-split')?.addEventListener('change', () => {
+      applyExcludePayerState();
+      syncExpenseSplitMode();
+    });
+
+    document.getElementById('expense-payer')?.addEventListener('change', () => {
+      applyExcludePayerState();
+      syncExpenseSplitMode();
+    });
+
+    document.getElementById('expense-amount')?.addEventListener('input', () => {
+      syncExpenseSplitMode();
+    });
+
+    document.getElementById('expense-receipt')?.addEventListener('change', () => {
+      const file = getSelectedReceiptFile();
+      if (file) {
+        document.getElementById('receipt-remove-flag').value = 'false';
+        renderReceiptControls({
+          file_name: file.name,
+        });
+      }
+    });
+
+    document.getElementById('split-members')?.addEventListener('input', (event) => {
+      const amountInput = event.target.closest('[data-expense-member-amount]');
+      if (!amountInput) return;
+      delete amountInput.dataset.autoFilled;
+      fillRemainingCustomSplit();
+      updateExpenseSplitPreview();
+    });
+
+    document.getElementById('split-members')?.addEventListener('change', (event) => {
+      const checkbox = event.target.closest('[data-expense-member-check]');
+      if (!checkbox) return;
+      applyExcludePayerState();
+      syncExpenseSplitMode();
+    });
 
     document.getElementById('add-expense-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('add-expense-btn');
       const errorEl = document.getElementById('add-expense-error');
+      const expenseId = document.getElementById('expense-id').value;
       btn.disabled = true; btn.classList.add('btn-loading');
       errorEl.style.display = 'none';
 
@@ -661,8 +1184,12 @@
       const amount = parseFloat(document.getElementById('expense-amount').value);
       const expenseDate = document.getElementById('expense-date').value;
       const paidByMemberId = document.getElementById('expense-payer').value;
-      const checkboxes = document.querySelectorAll('#split-members input[type="checkbox"]:checked');
-      const selectedMemberIds = Array.from(checkboxes).map(cb => cb.value);
+      const splitType = document.getElementById('expense-split-type').value;
+      const receiptFile = getSelectedReceiptFile();
+      const removeReceipt = document.getElementById('receipt-remove-flag').value === 'true';
+      const rows = Array.from(document.querySelectorAll('#split-members .split-member-row'));
+      const selectedRows = rows.filter((row) => row.querySelector('[data-expense-member-check]')?.checked);
+      const selectedMemberIds = selectedRows.map((row) => row.querySelector('[data-expense-member-check]').value);
 
       if (selectedMemberIds.length === 0) {
         errorEl.textContent = 'Select at least one person to split with.';
@@ -672,18 +1199,99 @@
       }
 
       try {
-        await createExpense({
-          groupId, paidByMemberId, title, amount, expenseDate, selectedMemberIds,
-        });
-        window.closeAddExpenseModal();
-        document.getElementById('add-expense-form').reset();
-        await loadExpenses();
-        await loadBalances();
+        validateReceiptFile(receiptFile);
       } catch (err) {
         errorEl.textContent = err.message;
         errorEl.style.display = 'block';
+        btn.disabled = false; btn.classList.remove('btn-loading');
+        return;
+      }
+
+      let customAmounts = null;
+      if (splitType === 'custom') {
+        customAmounts = selectedRows.map((row) => {
+          const memberId = row.querySelector('[data-expense-member-check]').value;
+          const amountInput = row.querySelector('[data-expense-member-amount]');
+          const rawValue = amountInput.value.trim();
+          const memberAmount = rawValue === '' ? null : parseFloat(rawValue);
+          return { member_id: memberId, amount: memberAmount };
+        });
+
+        const blankCount = customAmounts.filter((entry) => entry.amount === null).length;
+        if (blankCount > 1) {
+          errorEl.textContent = 'Leave only one amount blank so Prism can fill the rest.';
+          errorEl.style.display = 'block';
+          btn.disabled = false; btn.classList.remove('btn-loading');
+          return;
+        }
+
+        if (customAmounts.some((entry) => entry.amount !== null && (!Number.isFinite(entry.amount) || entry.amount < 0))) {
+          errorEl.textContent = 'Enter a valid amount for each selected person.';
+          errorEl.style.display = 'block';
+          btn.disabled = false; btn.classList.remove('btn-loading');
+          return;
+        }
+
+        if (blankCount === 0) {
+          const totalEntered = roundMoney(customAmounts.reduce((sum, entry) => sum + Number(entry.amount), 0));
+          if (Math.abs(totalEntered - roundMoney(amount)) > 0.01) {
+            errorEl.textContent = 'Custom amounts must add up to the expense total, or leave one amount blank.';
+            errorEl.style.display = 'block';
+            btn.disabled = false; btn.classList.remove('btn-loading');
+            return;
+          }
+        }
+
+        if (blankCount === 1) {
+          const enteredTotal = roundMoney(customAmounts.reduce((sum, entry) => {
+            if (entry.amount === null) return sum;
+            return sum + entry.amount;
+          }, 0));
+          if (enteredTotal > roundMoney(amount)) {
+            errorEl.textContent = 'The amounts you entered are more than the expense total.';
+            errorEl.style.display = 'block';
+            btn.disabled = false; btn.classList.remove('btn-loading');
+            return;
+          }
+        }
+      }
+
+      try {
+        const payload = { groupId, paidByMemberId, title, amount, expenseDate, selectedMemberIds, splitType, customAmounts, receiptFile };
+        if (expenseId) {
+          await updateExpense({
+            ...payload,
+            expenseId,
+            removeReceipt,
+          });
+        } else {
+          await createExpense(payload);
+        }
+        window.closeAddExpenseModal();
+        await refreshGroupData();
+      } catch (err) {
+        errorEl.textContent = err.message || 'Unable to save expense.';
+        errorEl.style.display = 'block';
       } finally { btn.disabled = false; btn.classList.remove('btn-loading'); }
     });
+
+    window.deleteCurrentExpense = async function() {
+      const expenseId = document.getElementById('expense-id').value;
+      if (!expenseId) return;
+
+      const deleteBtn = document.getElementById('delete-expense-btn');
+      deleteBtn.disabled = true;
+
+      try {
+        await deleteExpense(expenseId);
+        window.closeAddExpenseModal();
+        await refreshGroupData();
+      } catch (err) {
+        window.alert(err.message || 'Unable to delete expense.');
+      } finally {
+        deleteBtn.disabled = false;
+      }
+    };
 
     // ── Add Member Modal ──
     window.showAddMemberModal = function() {
