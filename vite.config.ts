@@ -25,7 +25,6 @@ export default defineConfig({
         'update-password': resolve(__dirname, 'update-password.html'),
         about: resolve(__dirname, 'about.html'),
         help: resolve(__dirname, 'help.html'),
-        blog: resolve(__dirname, 'blog.html'),
         privacy: resolve(__dirname, 'privacy.html'),
         contact: resolve(__dirname, 'contact.html'),
         terms: resolve(__dirname, 'terms.html'),
