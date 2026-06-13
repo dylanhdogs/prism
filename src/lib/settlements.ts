@@ -102,3 +102,50 @@ export async function markSplitSettled(splitId: string) {
   if (error) throw new Error(error.message);
   await logActivity(groupId, user.data.id, 'split_settled', { split_id: splitId });
 }
+
+export async function paySplits(
+  groupId: string,
+  splits: { splitId: string; fromMemberId: string; toMemberId: string; amount: number }[],
+  paymentMethod: string,
+) {
+  if (!splits.length) throw new Error('No splits selected.');
+  const supabase = getSupabaseClient();
+  const { user, membership } = await getCurrentMember(groupId);
+
+  const now = new Date().toISOString();
+
+  for (const split of splits) {
+    if (membership.role !== 'owner' && membership.id !== split.fromMemberId) {
+      throw new Error('You can only pay your own debts.');
+    }
+    const { error: markError } = await supabase
+      .from('expense_splits')
+      .update({ is_settled: true, updated_at: now })
+      .eq('id', split.splitId);
+    if (markError) throw new Error(markError.message);
+  }
+
+  const byPayee = new Map<string, number>();
+  for (const s of splits) {
+    byPayee.set(s.toMemberId, (byPayee.get(s.toMemberId) || 0) + s.amount);
+  }
+
+  for (const [toMemberId, total] of byPayee) {
+    const { error: insertError } = await supabase.from('settlements').insert({
+      group_id: groupId,
+      from_member_id: membership.id,
+      to_member_id: toMemberId,
+      amount: Math.round(total * 100) / 100,
+      status: 'completed',
+      settled_at: now,
+    });
+    if (insertError) throw new Error(insertError.message);
+  }
+
+  await logActivity(groupId, user.id, 'bulk_payment', {
+    split_ids: splits.map((s) => s.splitId),
+    payment_method: paymentMethod,
+    total_amount: Math.round(splits.reduce((sum, s) => sum + s.amount, 0) * 100) / 100,
+    payee_ids: Array.from(byPayee.keys()),
+  });
+}

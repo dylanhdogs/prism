@@ -626,6 +626,66 @@ img { max-width: 100%; display: block; }
 }
 .settlement-row:last-child { border-bottom: none; }
 .settlement-row .amount { font-weight: 700; color: var(--navy); }
+.settlement-row.selectable { cursor: default; }
+.debt-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--blue);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pay-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(59,130,246,0.06);
+  border: 1px solid rgba(59,130,246,0.15);
+  border-radius: 12px;
+}
+.pay-action-bar span { font-size: 14px; font-weight: 600; color: var(--navy); }
+.pay-method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.pay-method-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-700);
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.pay-method-card:hover { border-color: var(--blue); background: rgba(59,130,246,0.04); }
+.pay-method-card:has(input:checked) {
+  border-color: var(--blue);
+  background: rgba(59,130,246,0.08);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  color: var(--blue);
+}
+.pay-method-card input { display: none; }
+.pay-method-icon {
+  width: 36px;
+  height: 36px;
+}
+.pay-method-icon svg { width: 100%; height: 100%; }
+.paypal-icon { color: #003087; }
+.card-icon { color: #1a1a2e; }
+.applepay-icon { color: #1a1a2e; }
+.venmo-icon { color: #0085d0; }
+.cash-icon { color: #10b981; }
+.other-icon { color: var(--gray-500); }
 
 /* ── Modal / Overlay ────────────────────── */
 .modal-overlay {
