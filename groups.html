@@ -1529,6 +1529,7 @@
       try {
         await markSplitSettled(splitId);
         await loadBalances();
+        await loadSettlements();
       } catch (err) {
         alert(err.message);
       }
@@ -1542,6 +1543,7 @@
           await markSplitSettled(splitId);
         }
         await loadBalances();
+        await loadSettlements();
       } catch (err) {
         alert(err.message);
       }

@@ -74,12 +74,13 @@ export async function markSplitSettled(splitId: string) {
 
   const { data: split, error: splitError } = await supabase
     .from('expense_splits')
-    .select('member_id, expenses:expense_id(group_id)')
+    .select('member_id, amount_owed, is_settled, expenses:expense_id(group_id, paid_by_member_id)')
     .eq('id', splitId)
     .single();
 
   if (splitError || !split) throw new Error('Split not found.');
-  const groupId = (split.expenses as unknown as { group_id: string }).group_id;
+  const expense = split.expenses as unknown as { group_id: string; paid_by_member_id: string };
+  const groupId = expense.group_id;
 
   const { data: membership } = await supabase
     .from('group_members')
@@ -94,12 +95,29 @@ export async function markSplitSettled(splitId: string) {
     throw new Error('Only the group owner or the person who owes can mark a split as paid.');
   }
 
+  if (split.is_settled) return;
+
+  const now = new Date().toISOString();
   const { error } = await supabase
     .from('expense_splits')
-    .update({ is_settled: true, updated_at: new Date().toISOString() })
+    .update({ is_settled: true, updated_at: now })
     .eq('id', splitId);
 
   if (error) throw new Error(error.message);
+
+  if (split.member_id !== expense.paid_by_member_id && Number(split.amount_owed) > 0) {
+    const { error: settlementError } = await supabase.from('settlements').insert({
+      group_id: groupId,
+      from_member_id: split.member_id,
+      to_member_id: expense.paid_by_member_id,
+      amount: Math.round(Number(split.amount_owed) * 100) / 100,
+      status: 'completed',
+      settled_at: now,
+    });
+
+    if (settlementError) throw new Error(settlementError.message);
+  }
+
   await logActivity(groupId, user.data.id, 'split_settled', { split_id: splitId });
 }
 
