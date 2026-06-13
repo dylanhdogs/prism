@@ -436,14 +436,15 @@
           document.getElementById('pay-action-bar').style.display = 'none';
         } else {
           debtsEl.innerHTML = debts.map(d => {
-            const canPay = currentUserRole === 'owner' || d.fromMemberId === currentMemberId;
+            const isMine = d.fromMemberId === currentMemberId;
+            const canMark = currentUserRole === 'owner' || isMine;
             const label = d.expenseTitle ? ` for ${escapeHtml(d.expenseTitle)}` : '';
             const checked = selectedSplits.some(s => s.splitId === d.splitId) ? 'checked' : '';
             return `
-            <div class="settlement-row${canPay && d.splitId ? ' selectable' : ''}">
-              ${canPay && d.splitId ? `<input type="checkbox" class="debt-checkbox" data-split-id="${d.splitId}" data-from="${d.fromMemberId}" data-to="${d.toMemberId}" data-amount="${d.amount}" ${checked} onchange="toggleSplit(this)">` : ''}
+            <div class="settlement-row${isMine && d.splitId ? ' selectable' : ''}">
+              ${isMine && d.splitId ? `<input type="checkbox" class="debt-checkbox" data-split-id="${d.splitId}" data-from="${d.fromMemberId}" data-to="${d.toMemberId}" data-amount="${d.amount}" ${checked} onchange="toggleSplit(this)">` : ''}
               <span style="flex:1;">${escapeHtml(d.fromName)} owes ${escapeHtml(d.toName)}${label}</span>
-              <span class="amount">$${d.amount.toFixed(2)} ${canPay && d.splitId ? `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();markPaid('${d.splitId}')">Mark paid</button>` : ''}</span>
+              <span class="amount">$${d.amount.toFixed(2)} ${canMark && d.splitId ? `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();markPaid('${d.splitId}')">Mark paid</button>` : ''}</span>
             </div>`;
           }).join('');
           updatePayBar();

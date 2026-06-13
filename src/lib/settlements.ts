@@ -125,17 +125,23 @@ export async function paySplits(
     if (markError) throw new Error(markError.message);
   }
 
-  const byPayee = new Map<string, number>();
+  const byPair = new Map<string, { from: string; to: string; total: number }>();
   for (const s of splits) {
-    byPayee.set(s.toMemberId, (byPayee.get(s.toMemberId) || 0) + s.amount);
+    const key = `${s.fromMemberId}|${s.toMemberId}`;
+    let pair = byPair.get(key);
+    if (!pair) {
+      pair = { from: s.fromMemberId, to: s.toMemberId, total: 0 };
+      byPair.set(key, pair);
+    }
+    pair.total += s.amount;
   }
 
-  for (const [toMemberId, total] of byPayee) {
+  for (const [, pair] of byPair) {
     const { error: insertError } = await supabase.from('settlements').insert({
       group_id: groupId,
-      from_member_id: membership.id,
-      to_member_id: toMemberId,
-      amount: Math.round(total * 100) / 100,
+      from_member_id: pair.from,
+      to_member_id: pair.to,
+      amount: Math.round(pair.total * 100) / 100,
       status: 'completed',
       settled_at: now,
     });
