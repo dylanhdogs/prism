@@ -102,19 +102,63 @@ export async function calculateGroupBalances(groupId: string): Promise<{
     };
   });
 
-  const debts: OwedEntry[] = [];
+  const settlementByPair = new Map<string, number>();
+  for (const s of settlements || []) {
+    const key = `${s.from_member_id}|${s.to_member_id}`;
+    settlementByPair.set(key, (settlementByPair.get(key) || 0) + Number(s.amount));
+  }
+
+  // Map split IDs to their expense titles
+  const expenseTitleMap = new Map(expenses?.map((e) => [e.id, e.title]) || []);
+  const splitsExpTitles = new Map<string, string | undefined>();
+  for (const split of splits || []) {
+    splitsExpTitles.set(split.id, expenseTitleMap.get(split.expense_id) || undefined);
+  }
+
+  // Group unsettled splits by (fromMember, toMember) pair
+  const splitGroups = new Map<string, { splits: typeof splits; total: number; payerName: string }>();
   for (const expense of expenses || []) {
     const payerName = memberMap.get(expense.paid_by_member_id) || 'Unknown';
     for (const split of splits || []) {
       if (split.expense_id === expense.id && !split.is_settled && split.member_id !== expense.paid_by_member_id) {
+        const key = `${split.member_id}|${expense.paid_by_member_id}`;
+        let group = splitGroups.get(key);
+        if (!group) {
+          group = { splits: [], total: 0, payerName };
+          splitGroups.set(key, group);
+        }
+        group.splits.push(split);
+        group.total += Number(split.amount_owed);
+      }
+    }
+  }
+
+  const debts: OwedEntry[] = [];
+  for (const [key, group] of splitGroups) {
+    const [fromMemberId, toMemberId] = key.split('|');
+    const settled = settlementByPair.get(key) || 0;
+    const netOwed = Math.round((group.total - settled) * 100) / 100;
+
+    if (netOwed <= 0.01) continue;
+
+    if (settled > 0) {
+      debts.push({
+        fromMemberId,
+        fromName: memberMap.get(fromMemberId) || 'Unknown',
+        toMemberId,
+        toName: group.payerName,
+        amount: netOwed,
+      });
+    } else {
+      for (const split of group.splits) {
         debts.push({
-          fromMemberId: split.member_id,
-          fromName: memberMap.get(split.member_id) || 'Unknown',
-          toMemberId: expense.paid_by_member_id,
-          toName: payerName,
+          fromMemberId,
+          fromName: memberMap.get(fromMemberId) || 'Unknown',
+          toMemberId,
+          toName: group.payerName,
           amount: Number(split.amount_owed),
           splitId: split.id,
-          expenseTitle: expense.title || undefined,
+          expenseTitle: splitsExpTitles.get(split.id),
         });
       }
     }

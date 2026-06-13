@@ -393,6 +393,105 @@ img { max-width: 100%; display: block; }
   justify-content: flex-end;
 }
 
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.section-header h3 { margin-bottom: 2px; }
+.section-header p {
+  font-size: 13px;
+  color: var(--gray-500);
+}
+.member-overview {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.overview-card {
+  background: #fff;
+  border: 1px solid var(--gray-100);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+.overview-label {
+  display: block;
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-bottom: 4px;
+}
+.overview-card strong {
+  display: block;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--navy);
+}
+.member-row {
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--gray-100);
+  border-radius: 14px;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.member-row:hover {
+  border-color: var(--gray-200);
+  box-shadow: 0 8px 24px rgba(15,14,46,0.05);
+}
+.member-row:last-child { border-bottom: 1px solid var(--gray-100); }
+.member-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+.member-avatar.owner {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: var(--blue);
+}
+.member-avatar.invite {
+  background: var(--gray-100);
+  color: var(--gray-500);
+}
+.member-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.member-role {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.role-pill,
+.you-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.role-pill.owner {
+  background: #dbeafe;
+  color: var(--blue);
+}
+.role-pill.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+.you-pill {
+  background: #ecfdf5;
+  color: #047857;
+}
+
 /* ── Expenses list ──────────────────────── */
 .expenses-list { display: flex; flex-direction: column; gap: 12px; }
 .expense-row {
@@ -635,6 +734,19 @@ img { max-width: 100%; display: block; }
   .app-content { padding: 16px; }
   .groups-grid { grid-template-columns: 1fr; }
   .balance-summary { grid-template-columns: 1fr; }
+  .member-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .section-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .member-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .member-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
   .group-detail-header { flex-direction: column; }
   .auth-card { padding: 28px 20px; }
 }
