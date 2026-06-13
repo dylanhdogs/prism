@@ -810,3 +810,125 @@ img { max-width: 100%; display: block; }
   .group-detail-header { flex-direction: column; }
   .auth-card { padding: 28px 20px; }
 }
+
+@media (max-width: 560px) {
+  .modal-overlay {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .modal {
+    width: min(100%, calc(100vw - 24px));
+    max-width: none;
+    max-height: min(92vh, 92dvh);
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .modal h2 {
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+
+  .modal .form-group {
+    margin-bottom: 12px;
+  }
+
+  .modal .form-group input,
+  .modal .form-group select,
+  .modal .form-group textarea {
+    width: 100%;
+    min-width: 0;
+    font-size: 16px;
+    padding: 12px 14px;
+  }
+
+  #add-expense-form {
+    min-width: 0;
+  }
+
+  #add-expense-modal .modal {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+
+  #expense-receipt {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 14px;
+  }
+
+  .split-tools {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .split-tools .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .split-option {
+    min-height: 44px;
+  }
+
+  .split-member-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--gray-100);
+  }
+
+  .split-member-row:last-child {
+    border-bottom: none;
+  }
+
+  .split-member-check {
+    min-height: 36px;
+    width: 100%;
+  }
+
+  .split-member-check input {
+    width: 22px;
+    height: 22px;
+  }
+
+  .split-member-amount {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .receipt-current {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .receipt-actions {
+    width: 100%;
+  }
+
+  .receipt-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .modal-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .modal-actions .btn {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+  }
+
+  #delete-expense-btn {
+    margin-right: 0 !important;
+    order: 1;
+  }
+}
