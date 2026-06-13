@@ -282,18 +282,23 @@ export function calculateCustomSplit(amount: number, customAmounts: { member_id:
 }
 
 function buildExpenseSplits(input: CreateExpenseInput): { member_id: string; amount_owed: number }[] {
+  const selectedMemberIds = uniqueIds(input.selectedMemberIds);
+
   if (input.splitType === 'custom') {
     if (!input.customAmounts || input.customAmounts.length === 0) {
       throw new Error('Add custom amounts for each selected person.');
     }
 
-    const blankEntries = input.customAmounts.filter((entry) => entry.amount === null || !Number.isFinite(entry.amount));
+    const customAmounts = combineCustomAmounts(input.customAmounts)
+      .filter((entry) => selectedMemberIds.includes(entry.member_id));
+
+    const blankEntries = customAmounts.filter((entry) => entry.amount === null || !Number.isFinite(entry.amount));
     if (blankEntries.length > 1) {
       throw new Error('Leave only one amount blank so Prism can fill the rest.');
     }
 
     if (blankEntries.length === 1) {
-      const remainder = roundMoney(input.amount - input.customAmounts.reduce((sum, entry) => {
+      const remainder = roundMoney(input.amount - customAmounts.reduce((sum, entry) => {
         if (entry.amount === null || !Number.isFinite(entry.amount)) return sum;
         return sum + Number(entry.amount);
       }, 0));
@@ -302,7 +307,7 @@ function buildExpenseSplits(input: CreateExpenseInput): { member_id: string; amo
         throw new Error('The amounts you entered are more than the expense total.');
       }
 
-      return input.customAmounts.map((entry) => {
+      return customAmounts.map((entry) => {
         if (entry.amount === null || !Number.isFinite(entry.amount)) {
           return { member_id: entry.member_id, amount_owed: remainder };
         }
@@ -310,17 +315,41 @@ function buildExpenseSplits(input: CreateExpenseInput): { member_id: string; amo
       });
     }
 
-    return calculateCustomSplit(input.amount, input.customAmounts.map((entry) => ({
+    return calculateCustomSplit(input.amount, customAmounts.map((entry) => ({
       member_id: entry.member_id,
       amount: Number(entry.amount ?? 0),
     })));
   }
 
-  return calculateEqualSplit(input.amount, input.selectedMemberIds);
+  return calculateEqualSplit(input.amount, selectedMemberIds);
 }
 
 function roundMoney(value: number): number {
   return Math.round(Number(value || 0) * 100) / 100;
+}
+
+function uniqueIds(ids: string[]): string[] {
+  return Array.from(new Set(ids.filter(Boolean)));
+}
+
+function combineCustomAmounts(
+  customAmounts: { member_id: string; amount: number | null }[],
+): { member_id: string; amount: number | null }[] {
+  const combined = new Map<string, number | null>();
+
+  for (const entry of customAmounts) {
+    if (!entry.member_id) continue;
+    const current = combined.get(entry.member_id);
+
+    if (entry.amount === null || !Number.isFinite(entry.amount)) {
+      if (!combined.has(entry.member_id)) combined.set(entry.member_id, null);
+      continue;
+    }
+
+    combined.set(entry.member_id, roundMoney(Number(current || 0) + Number(entry.amount)));
+  }
+
+  return Array.from(combined, ([member_id, amount]) => ({ member_id, amount }));
 }
 
 function validateReceiptFile(file: File) {

@@ -27,6 +27,13 @@ type SplitRow = {
   is_settled: boolean;
 };
 
+type ExpenseRow = {
+  id: string;
+  paid_by_member_id: string;
+  amount: number;
+  title: string;
+};
+
 export async function calculateGroupBalances(groupId: string): Promise<{
   balances: BalanceSummary[];
   debts: OwedEntry[];
@@ -64,10 +71,11 @@ export async function calculateGroupBalances(groupId: string): Promise<{
     };
   }
 
-  const { data: splits } = await supabase
+  const { data: rawSplits } = await supabase
     .from('expense_splits')
     .select('id, expense_id, member_id, amount_owed, is_settled')
     .in('expense_id', expenseIds);
+  const splits = normalizeSplitsForBalance(expenses || [], rawSplits || []);
 
   const memberMap = new Map(members.map((m) => [m.id, m.display_name ?? 'Unknown']));
   const paidMap = new Map<string, number>();
@@ -199,4 +207,51 @@ function simplifyDebts(balances: BalanceSummary[], memberMap: Map<string, string
   }
 
   return result;
+}
+
+function normalizeSplitsForBalance(expenses: ExpenseRow[], splits: SplitRow[]): SplitRow[] {
+  const expenseById = new Map(expenses.map((expense) => [expense.id, expense]));
+  const splitsByExpense = new Map<string, SplitRow[]>();
+
+  for (const split of splits) {
+    const amount = roundMoney(Number(split.amount_owed));
+    if (amount <= 0) continue;
+
+    const normalizedSplit = { ...split, amount_owed: amount };
+    const group = splitsByExpense.get(split.expense_id) || [];
+    group.push(normalizedSplit);
+    splitsByExpense.set(split.expense_id, group);
+  }
+
+  const normalized: SplitRow[] = [];
+  for (const [expenseId, expenseSplits] of splitsByExpense) {
+    const expense = expenseById.get(expenseId);
+    if (!expense) continue;
+
+    const expenseAmount = roundMoney(Number(expense.amount));
+    if (expenseAmount <= 0) continue;
+
+    const splitTotal = roundMoney(expenseSplits.reduce((sum, split) => sum + Number(split.amount_owed), 0));
+    if (splitTotal <= expenseAmount + 0.01) {
+      normalized.push(...expenseSplits);
+      continue;
+    }
+
+    const scale = expenseAmount / splitTotal;
+    let runningTotal = 0;
+    expenseSplits.forEach((split, index) => {
+      const isLast = index === expenseSplits.length - 1;
+      const amount = isLast
+        ? roundMoney(expenseAmount - runningTotal)
+        : roundMoney(Number(split.amount_owed) * scale);
+      runningTotal = roundMoney(runningTotal + amount);
+      normalized.push({ ...split, amount_owed: Math.max(0, amount) });
+    });
+  }
+
+  return normalized;
+}
+
+function roundMoney(value: number): number {
+  return Math.round(Number(value || 0) * 100) / 100;
 }
