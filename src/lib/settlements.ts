@@ -152,6 +152,6 @@ export async function paySplits(
     split_ids: splits.map((s) => s.splitId),
     payment_method: paymentMethod,
     total_amount: Math.round(splits.reduce((sum, s) => sum + s.amount, 0) * 100) / 100,
-    payee_ids: Array.from(byPayee.keys()),
+    payee_ids: Array.from(new Set(Array.from(byPair.values()).map((pair) => pair.to))),
   });
 }

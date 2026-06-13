@@ -18,6 +18,14 @@ export interface OwedEntry {
   expenseTitle?: string;
 }
 
+type SplitRow = {
+  id: string;
+  expense_id: string;
+  member_id: string;
+  amount_owed: number;
+  is_settled: boolean;
+};
+
 export async function calculateGroupBalances(groupId: string): Promise<{
   balances: BalanceSummary[];
   debts: OwedEntry[];
@@ -116,7 +124,7 @@ export async function calculateGroupBalances(groupId: string): Promise<{
   }
 
   // Group unsettled splits by (fromMember, toMember) pair
-  const splitGroups = new Map<string, { splits: typeof splits; total: number; payerName: string }>();
+  const splitGroups = new Map<string, { splits: SplitRow[]; total: number; payerName: string }>();
   for (const expense of expenses || []) {
     const payerName = memberMap.get(expense.paid_by_member_id) || 'Unknown';
     for (const split of splits || []) {
@@ -169,8 +177,9 @@ export async function calculateGroupBalances(groupId: string): Promise<{
 }
 
 function simplifyDebts(balances: BalanceSummary[], memberMap: Map<string, string>): OwedEntry[] {
-  const creditors = balances.filter((b) => b.netBalance > 0).sort((a, b) => b.netBalance - a.netBalance);
-  const debtors = balances.filter((b) => b.netBalance < 0).sort((a, b) => a.netBalance - b.netBalance);
+  const workingBalances = balances.map((balance) => ({ ...balance }));
+  const creditors = workingBalances.filter((b) => b.netBalance > 0).sort((a, b) => b.netBalance - a.netBalance);
+  const debtors = workingBalances.filter((b) => b.netBalance < 0).sort((a, b) => a.netBalance - b.netBalance);
   const result: OwedEntry[] = [];
   let ci = 0;
   let di = 0;
