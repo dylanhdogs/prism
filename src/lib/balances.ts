@@ -15,6 +15,7 @@ export interface OwedEntry {
   toName: string;
   amount: number;
   splitId?: string;
+  splitIds?: string[];
   expenseTitle?: string;
 }
 
@@ -147,27 +148,20 @@ export async function calculateGroupBalances(groupId: string): Promise<{
 
     if (netOwed <= 0.01) continue;
 
-    if (settled > 0) {
-      debts.push({
-        fromMemberId,
-        fromName: memberMap.get(fromMemberId) || 'Unknown',
-        toMemberId,
-        toName: group.payerName,
-        amount: netOwed,
-      });
-    } else {
-      for (const split of group.splits) {
-        debts.push({
-          fromMemberId,
-          fromName: memberMap.get(fromMemberId) || 'Unknown',
-          toMemberId,
-          toName: group.payerName,
-          amount: Number(split.amount_owed),
-          splitId: split.id,
-          expenseTitle: splitsExpTitles.get(split.id),
-        });
-      }
-    }
+    const splitTitles = group.splits.map((split) => splitsExpTitles.get(split.id)).filter(Boolean);
+    const firstTitle = splitTitles[0];
+    const hasOneTitle = splitTitles.length === group.splits.length && splitTitles.every((title) => title === firstTitle);
+
+    debts.push({
+      fromMemberId,
+      fromName: memberMap.get(fromMemberId) || 'Unknown',
+      toMemberId,
+      toName: group.payerName,
+      amount: netOwed,
+      splitId: group.splits.length === 1 && settled === 0 ? group.splits[0].id : undefined,
+      splitIds: settled === 0 ? group.splits.map((split) => split.id) : undefined,
+      expenseTitle: hasOneTitle ? firstTitle : undefined,
+    });
   }
 
   const simplified = simplifyDebts(balances, memberMap);
