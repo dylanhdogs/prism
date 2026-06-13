@@ -82,9 +82,7 @@ export async function calculateGroupBalances(groupId: string): Promise<{
   }
 
   for (const split of splits || []) {
-    if (!split.is_settled) {
-      owedMap.set(split.member_id, (owedMap.get(split.member_id) || 0) + Number(split.amount_owed));
-    }
+    owedMap.set(split.member_id, (owedMap.get(split.member_id) || 0) + Number(split.amount_owed));
   }
 
   const { data: settlements } = await supabase
