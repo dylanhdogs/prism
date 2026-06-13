@@ -1,11 +1,21 @@
 import { getSupabaseClient } from './supabaseClient';
-import { requireGroupOwner } from './groups';
+import { getCurrentUser } from './auth';
 import { logActivity } from './database';
 import type { Settlement } from './database.types';
 
-async function requireSettlementOwnerAccess(groupId: string) {
-  const { user } = await requireGroupOwner(groupId);
-  return user;
+async function getCurrentMember(groupId: string) {
+  const supabase = getSupabaseClient();
+  const user = await getCurrentUser();
+  if (!user.data) throw new Error('Not authenticated.');
+  const { data: membership } = await supabase
+    .from('group_members')
+    .select('id, role')
+    .eq('group_id', groupId)
+    .eq('user_id', user.data.id)
+    .eq('status', 'active')
+    .single();
+  if (!membership) throw new Error('You are not a member of this group.');
+  return { user: user.data, membership };
 }
 
 export async function markSettlementPaid(
@@ -15,7 +25,11 @@ export async function markSettlementPaid(
   amount: number,
 ) {
   const supabase = getSupabaseClient();
-  const user = await requireSettlementOwnerAccess(groupId);
+  const { user, membership } = await getCurrentMember(groupId);
+
+  if (membership.role !== 'owner' && membership.id !== fromMemberId) {
+    throw new Error('Only the group owner or the person making the payment can record a settlement.');
+  }
 
   const { data, error } = await supabase
     .from('settlements')
@@ -55,6 +69,9 @@ export async function getGroupSettlements(groupId: string) {
 
 export async function markSplitSettled(splitId: string) {
   const supabase = getSupabaseClient();
+  const user = await getCurrentUser();
+  if (!user.data) throw new Error('Not authenticated.');
+
   const { data: split, error: splitError } = await supabase
     .from('expense_splits')
     .select('member_id, expenses:expense_id(group_id)')
@@ -62,8 +79,20 @@ export async function markSplitSettled(splitId: string) {
     .single();
 
   if (splitError || !split) throw new Error('Split not found.');
-  const expense = split.expenses as unknown as { group_id: string };
-  const user = await requireSettlementOwnerAccess(expense.group_id);
+  const groupId = (split.expenses as unknown as { group_id: string }).group_id;
+
+  const { data: membership } = await supabase
+    .from('group_members')
+    .select('id, role')
+    .eq('group_id', groupId)
+    .eq('user_id', user.data.id)
+    .eq('status', 'active')
+    .single();
+
+  if (!membership) throw new Error('You are not a member of this group.');
+  if (membership.role !== 'owner' && membership.id !== split.member_id) {
+    throw new Error('Only the group owner or the person who owes can mark a split as paid.');
+  }
 
   const { error } = await supabase
     .from('expense_splits')
@@ -71,5 +100,5 @@ export async function markSplitSettled(splitId: string) {
     .eq('id', splitId);
 
   if (error) throw new Error(error.message);
-  await logActivity(expense.group_id, user.id, 'split_settled', { split_id: splitId });
+  await logActivity(groupId, user.data.id, 'split_settled', { split_id: splitId });
 }

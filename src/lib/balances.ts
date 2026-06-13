@@ -14,6 +14,8 @@ export interface OwedEntry {
   toMemberId: string;
   toName: string;
   amount: number;
+  splitId?: string;
+  expenseTitle?: string;
 }
 
 export async function calculateGroupBalances(groupId: string): Promise<{
@@ -35,7 +37,7 @@ export async function calculateGroupBalances(groupId: string): Promise<{
 
   const { data: expenses } = await supabase
     .from('expenses')
-    .select('id, paid_by_member_id, amount')
+    .select('id, paid_by_member_id, amount, title')
     .eq('group_id', groupId);
 
   const expenseIds = expenses ? expenses.map((e) => e.id) : [];
@@ -55,7 +57,7 @@ export async function calculateGroupBalances(groupId: string): Promise<{
 
   const { data: splits } = await supabase
     .from('expense_splits')
-    .select('expense_id, member_id, amount_owed, is_settled')
+    .select('id, expense_id, member_id, amount_owed, is_settled')
     .in('expense_id', expenseIds);
 
   const memberMap = new Map(members.map((m) => [m.id, m.display_name ?? 'Unknown']));
@@ -75,6 +77,17 @@ export async function calculateGroupBalances(groupId: string): Promise<{
     if (!split.is_settled) {
       owedMap.set(split.member_id, (owedMap.get(split.member_id) || 0) + Number(split.amount_owed));
     }
+  }
+
+  const { data: settlements } = await supabase
+    .from('settlements')
+    .select('from_member_id, to_member_id, amount')
+    .eq('group_id', groupId)
+    .eq('status', 'completed');
+
+  for (const s of settlements || []) {
+    paidMap.set(s.from_member_id, (paidMap.get(s.from_member_id) || 0) + Number(s.amount));
+    owedMap.set(s.to_member_id, (owedMap.get(s.to_member_id) || 0) + Number(s.amount));
   }
 
   const balances: BalanceSummary[] = members.map((m) => {
@@ -100,6 +113,8 @@ export async function calculateGroupBalances(groupId: string): Promise<{
           toMemberId: expense.paid_by_member_id,
           toName: payerName,
           amount: Number(split.amount_owed),
+          splitId: split.id,
+          expenseTitle: expense.title || undefined,
         });
       }
     }

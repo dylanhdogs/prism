@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us — PRISM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #1a1a2e;
+      background: #fff;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      width: 100%;
+    }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+    img { max-width: 100%; display: block; }
+
+    :root {
+      --navy: #0f0e2e;
+      --navy-light: #1a1848;
+      --blue: #4f6ef7;
+      --purple: #8b5cf6;
+      --violet: #a78bfa;
+      --lavender: #ede9fe;
+      --electric: #3b82f6;
+      --white: #ffffff;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-900: #111827;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(79, 110, 247, 0.35);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(79, 110, 247, 0.45);
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--purple);
+      margin-bottom: 12px;
+    }
+    .section-headline {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.25;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 17px;
+      color: var(--gray-500);
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: transparent;
+      padding: 0 24px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 80px;
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-logo img {
+      width: 68px;
+      height: 68px;
+      flex-shrink: 0;
+      object-fit: contain;
+    }
+    .header-logo-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .header-logo-text .brand {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+    .header-logo-text .sub {
+      font-size: 11px;
+      color: var(--gray-400);
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    nav {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    nav a {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.7);
+      transition: color 0.2s;
+    }
+    nav a:hover { color: #fff; }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .header-actions .login {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.7);
+    }
+    .header-actions .login:hover { color: #fff; }
+    .header-actions .btn {
+      padding: 10px 22px;
+      font-size: 14px;
+    }
+
+    .page-hero {
+      background: linear-gradient(140deg, var(--navy) 0%, #15134a 40%, #1a1660 70%, #0f0e2e 100%);
+      padding: 160px 24px 80px;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+    .page-hero::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -10%;
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(79,110,247,0.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .page-hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -5%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .page-hero .container { position: relative; z-index: 1; }
+    .page-hero h1 {
+      font-size: 48px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+    .page-hero p {
+      font-size: 18px;
+      color: rgba(255,255,255,0.65);
+      max-width: 540px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    .contact-section {
+      padding: 80px 24px;
+    }
+    .contact-section:nth-child(even) { background: var(--gray-50); }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+    .contact-card {
+      text-align: center;
+      padding: 40px 24px;
+      border: 1px solid var(--gray-100);
+      border-radius: 18px;
+      background: #fff;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .contact-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+    }
+    .contact-card .icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: var(--lavender);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 24px;
+    }
+    .contact-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 8px;
+    }
+    .contact-card p {
+      font-size: 14px;
+      color: var(--gray-500);
+      margin-bottom: 16px;
+      line-height: 1.7;
+    }
+    .contact-card a {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--blue);
+      word-break: break-all;
+    }
+    .contact-card a:hover { color: var(--purple); }
+
+    .form-wrapper {
+      max-width: 640px;
+      margin: 48px auto 0;
+    }
+    .contact-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--gray-300);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--navy);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(79,110,247,0.10);
+    }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 140px;
+    }
+    .form-group .hint {
+      font-size: 12px;
+      color: var(--gray-400);
+    }
+    .form-success {
+      display: none;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+    }
+    .form-success.show { display: block; }
+
+    .faq-section {
+      max-width: 760px;
+      margin: 48px auto 0;
+    }
+    .faq-item {
+      border-bottom: 1px solid var(--gray-100);
+      padding: 20px 0;
+    }
+    .faq-question {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .faq-question svg {
+      flex-shrink: 0;
+      transition: transform 0.3s ease;
+      color: var(--gray-400);
+    }
+    .faq-item.open .faq-question svg { transform: rotate(180deg); }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      font-size: 15px;
+      color: var(--gray-600);
+      line-height: 1.7;
+    }
+    .faq-item.open .faq-answer {
+      max-height: 300px;
+      padding-top: 14px;
+    }
+
+    footer {
+      background: var(--navy);
+      padding: 60px 24px 0;
+    }
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
+      gap: 40px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .footer-brand-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .footer-brand-top img { width: 40px; height: 40px; object-fit: contain; }
+    .brand-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      text-transform: uppercase; line-height: 1.2;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: var(--gray-400);
+      text-transform: uppercase;
+    }
+    .footer-brand p {
+      font-size: 14px;
+      color: var(--gray-500);
+      line-height: 1.7; max-width: 280px;
+    }
+    .footer-col h4 {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+    .footer-col a {
+      display: block;
+      font-size: 14px;
+      color: var(--gray-500);
+      margin-bottom: 12px;
+      transition: color 0.2s;
+    }
+    .footer-col a:hover { color: #fff; }
+    .footer-subscribe {
+      display: flex; gap: 0;
+      border: 1px solid var(--gray-700);
+      border-radius: 10px; overflow: hidden;
+    }
+    .footer-subscribe input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 12px 14px;
+      font-family: inherit;
+      font-size: 14px;
+      color: #fff;
+      outline: none;
+    }
+    .footer-subscribe input::placeholder { color: var(--gray-500); }
+    .footer-subscribe button {
+      background: var(--blue);
+      border: none;
+      padding: 12px 16px;
+      cursor: pointer;
+      color: #fff;
+      display: flex;
+      align-items: center;
+    }
+    .footer-subscribe button:hover { background: var(--purple); }
+    .footer-bottom {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 0;
+    }
+    .footer-bottom p { font-size: 13px; color: var(--gray-500); }
+    .footer-socials { display: flex; gap: 16px; }
+    .footer-socials a { color: var(--gray-500); transition: color 0.2s; }
+    .footer-socials a:hover { color: #fff; }
+    .footer-socials svg { width: 20px; height: 20px; }
+
+    @media (max-width: 900px) {
+      .page-hero h1 { font-size: 32px; }
+      .contact-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .footer-inner { grid-template-columns: 1fr 1fr; }
+      nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <svg style="position:absolute;width:0;height:0;" aria-hidden="true">
+    <defs>
+      <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#4f6ef7"/>
+        <stop offset="100%" stop-color="#8b5cf6"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <header>
+  <div class="header-inner">
+    <a href="/" class="header-logo">
+      <img src="prism_logo_01.png" alt="PRISM">
+      <div class="header-logo-text">
+        <span class="brand">PRISM</span>
+        <span class="sub">Shared Expenses</span>
+      </div>
+    </a>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/#features">Features</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/about">About</a>
+      <a href="/help">Help</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/login" class="login">Log in</a>
+      <a href="/signup" class="btn btn-primary">Sign up</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <span class="section-label">Contact Us</span>
+    <h1>We'd love to <span class="gradient-text">hear</span> from you.</h1>
+    <p>Have a question, feedback, or just want to say hello? Reach out and we'll get back to you.</p>
+  </div>
+</section>
+
+<section class="contact-section">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-card">
+        <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+          </div>
+        <h3>Email</h3>
+        <p>For support questions, feature requests, or anything else.</p>
+        <a href="mailto:support@prismbudgeting.com">support@prismbudgeting.com</a>
+      </div>
+      <div class="contact-card">
+        <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+              <path d="M4 4l11.733 16h4.267l-11.733 -16z"/>
+              <path d="M4 20l6.768 -6.768m2.46 -2.46L20 4"/>
+            </svg>
+          </div>
+        <h3>X (Twitter)</h3>
+        <p>Follow us for product updates, tips, and announcements.</p>
+        <a href="https://x.com/prism" target="_blank" rel="noopener noreferrer">@prism</a>
+      </div>
+      <div class="contact-card">
+        <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+        <h3>Live Chat</h3>
+        <p>Chat with our team during business hours (Mon–Fri, 9am–5pm EST).</p>
+        <a href="#">Start a chat</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="contact-section">
+  <div class="container">
+    <div style="text-align:center;">
+      <span class="section-label">Send us a message</span>
+      <h2 class="section-headline">Get in touch directly.</h2>
+      <p class="section-sub">Fill out the form and we'll respond within 24 hours.</p>
+    </div>
+    <div class="form-wrapper">
+      <div class="form-success" id="form-success">Thanks for reaching out! We'll get back to you within 24 hours.</div>
+      <form class="contact-form" id="contact-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" placeholder="Your name" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="you@example.com" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="subject">Subject</label>
+          <select id="subject">
+            <option value="">Select a topic…</option>
+            <option value="support">Technical support</option>
+            <option value="feedback">Feedback & suggestions</option>
+            <option value="bug">Report a bug</option>
+            <option value="billing">Billing question</option>
+            <option value="privacy">Privacy concern</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="message">Message</label>
+          <textarea id="message" placeholder="Tell us how we can help…" required></textarea>
+          <span class="hint">Please include as much detail as possible so we can help you quickly.</span>
+        </div>
+        <button type="submit" class="btn btn-primary" style="align-self:flex-start;">Send message</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="contact-section" style="background: var(--gray-50);">
+  <div class="container">
+    <div style="text-align:center;">
+      <span class="section-label">Quick answers</span>
+      <h2 class="section-headline">Before you reach out.</h2>
+      <p class="section-sub">Your question might already be answered in our FAQ.</p>
+    </div>
+    <div class="faq-section">
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          How fast do you respond?
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 8L10 13L15 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="faq-answer">We aim to respond to all inquiries within 24 hours during business days. If you have an urgent issue, email us directly and we'll prioritize it.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Can I report a bug?
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 8L10 13L15 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="faq-answer">Absolutely. Use the form above or email us directly. Please include your browser type, what you were doing when the bug occurred, and any error messages you saw.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Do you have a phone number?
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 8L10 13L15 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="faq-answer">We don't offer phone support at this time. Email and live chat are the best ways to reach us. We're a small team and this helps us respond efficiently to everyone.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Do you accept feature requests?
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 8L10 13L15 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="faq-answer">Yes! We love hearing from our users. Feature requests and feedback are the main drivers of our product roadmap. Use the form above or email us directly.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-brand-top">
+        <img src="prism_logo_01.png" alt="Prism logo">
+        <div>
+          <div class="brand-name">Prism</div>
+          <div class="brand-sub">Shared Expenses</div>
+        </div>
+      </div>
+      <p>Making shared expenses simple, fair, and stress-free for everyone.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="/#features">Features</a>
+      <a href="/#how-it-works">How It Works</a>
+      <a href="/#pricing">Pricing</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="/about">About</a>
+      <a href="/blog">Blog</a>
+
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="/help">Help Center</a>
+      <a href="/contact">Contact Us</a>
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/terms">Terms of Service</a>
+    </div>
+    <div class="footer-col">
+      <h4>Stay updated</h4>
+      <div class="footer-subscribe">
+        <input type="email" placeholder="Enter your email">
+        <button aria-label="Subscribe">
+          <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 9H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M11 5L15 9L11 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 Prism. All rights reserved.</p>
+    <div class="footer-socials">
+      <a href="https://x.com/prism" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+      <a href="https://instagram.com/prism" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
+      <a href="https://facebook.com/prism" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function toggleFaq(el) {
+    el.parentElement.classList.toggle('open');
+  }
+  document.getElementById('contact-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const success = document.getElementById('form-success');
+    success.classList.add('show');
+    e.target.reset();
+    setTimeout(() => success.classList.remove('show'), 5000);
+  });
+</script>
+
+</body>
+</html>

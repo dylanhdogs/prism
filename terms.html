@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service — PRISM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #1a1a2e;
+      background: #fff;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      width: 100%;
+    }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+    img { max-width: 100%; display: block; }
+
+    :root {
+      --navy: #0f0e2e;
+      --blue: #4f6ef7;
+      --purple: #8b5cf6;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-900: #111827;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .container.narrow { max-width: 800px; }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--purple);
+      margin-bottom: 12px;
+    }
+
+    header {
+      background: transparent; padding: 0 24px;
+      position: absolute; top: 0; left: 0; right: 0; z-index: 100;
+    }
+    .header-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 80px;
+    }
+    .header-logo { display: flex; align-items: center; gap: 10px; }
+    .header-logo img { width: 68px; height: 68px; flex-shrink: 0; object-fit: contain; }
+    .header-logo-text { display: flex; flex-direction: column; }
+    .header-logo-text .brand {
+      font-size: 18px; font-weight: 800; color: #fff;
+      line-height: 1.2; text-transform: uppercase;
+    }
+    .header-logo-text .sub {
+      font-size: 11px; color: var(--gray-400);
+      letter-spacing: 0.3px; text-transform: uppercase;
+    }
+    nav {
+      flex: 1; display: flex; align-items: center;
+      justify-content: space-evenly; max-width: 700px; margin: 0 auto;
+    }
+    nav a {
+      font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.7);
+      transition: color 0.2s;
+    }
+    nav a:hover { color: #fff; }
+    .header-actions { display: flex; align-items: center; gap: 20px; }
+    .header-actions .login {
+      font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.7);
+    }
+    .header-actions .login:hover { color: #fff; }
+    .header-actions .btn {
+      padding: 10px 22px; font-size: 14px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: inherit; font-weight: 600; font-size: 15px;
+      padding: 14px 28px; border-radius: 12px; border: none;
+      cursor: pointer; transition: all 0.25s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      color: #fff; box-shadow: 0 4px 20px rgba(79,110,247,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(79,110,247,0.45); }
+
+    .page-hero {
+      background: linear-gradient(140deg, var(--navy) 0%, #15134a 40%, #1a1660 70%, #0f0e2e 100%);
+      padding: 160px 24px 80px; position: relative; overflow: hidden; text-align: center;
+    }
+    .page-hero::before {
+      content: ''; position: absolute; top: -40%; right: -10%;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(79,110,247,0.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .page-hero::after {
+      content: ''; position: absolute; bottom: -30%; left: -5%;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .page-hero .container { position: relative; z-index: 1; }
+    .page-hero h1 {
+      font-size: 48px; font-weight: 900; color: #fff;
+      line-height: 1.15; letter-spacing: -1px; margin-bottom: 16px;
+    }
+    .page-hero p {
+      font-size: 17px; color: rgba(255,255,255,0.65);
+      max-width: 540px; margin: 0 auto; line-height: 1.7;
+    }
+
+    .legal-section { padding: 80px 24px 60px; }
+    .legal-content h2 {
+      font-size: 22px; font-weight: 700; color: var(--navy);
+      margin-top: 48px; margin-bottom: 12px;
+    }
+    .legal-content h2:first-child { margin-top: 0; }
+    .legal-content h3 {
+      font-size: 17px; font-weight: 600; color: var(--navy);
+      margin-top: 28px; margin-bottom: 8px;
+    }
+    .legal-content p {
+      font-size: 15px; color: var(--gray-600);
+      line-height: 1.8; margin-bottom: 16px;
+    }
+    .legal-content ul {
+      list-style: disc; padding-left: 24px; margin-bottom: 16px;
+    }
+    .legal-content ul li {
+      font-size: 15px; color: var(--gray-600);
+      line-height: 1.8; margin-bottom: 6px;
+    }
+    .legal-content strong { color: var(--navy); font-weight: 600; }
+    .legal-content a { color: var(--blue); font-weight: 500; }
+    .legal-content a:hover { color: var(--purple); }
+    .legal-content .last-updated {
+      font-size: 13px; color: var(--gray-400);
+      margin-bottom: 32px; font-style: italic;
+    }
+
+    footer {
+      background: var(--navy); padding: 60px 24px 0;
+    }
+    .footer-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
+      gap: 40px; padding-bottom: 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .footer-brand-top { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .footer-brand-top img { width: 40px; height: 40px; object-fit: contain; }
+    .brand-name { font-size: 18px; font-weight: 800; color: #fff; text-transform: uppercase; line-height: 1.2; }
+    .brand-sub { font-size: 11px; color: var(--gray-400); text-transform: uppercase; }
+    .footer-brand p { font-size: 14px; color: var(--gray-500); line-height: 1.7; max-width: 280px; }
+    .footer-col h4 {
+      font-size: 12px; font-weight: 700; color: var(--gray-400);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px;
+    }
+    .footer-col a { display: block; font-size: 14px; color: var(--gray-500); margin-bottom: 12px; transition: color 0.2s; }
+    .footer-col a:hover { color: #fff; }
+    .footer-subscribe { display: flex; gap: 0; border: 1px solid var(--gray-700); border-radius: 10px; overflow: hidden; }
+    .footer-subscribe input { flex: 1; background: transparent; border: none; padding: 12px 14px; font-family: inherit; font-size: 14px; color: #fff; outline: none; }
+    .footer-subscribe input::placeholder { color: var(--gray-500); }
+    .footer-subscribe button { background: var(--blue); border: none; padding: 12px 16px; cursor: pointer; color: #fff; display: flex; align-items: center; }
+    .footer-subscribe button:hover { background: var(--purple); }
+    .footer-bottom { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 24px 0; }
+    .footer-bottom p { font-size: 13px; color: var(--gray-500); }
+    .footer-socials { display: flex; gap: 16px; }
+    .footer-socials a { color: var(--gray-500); transition: color 0.2s; }
+    .footer-socials a:hover { color: #fff; }
+    .footer-socials svg { width: 20px; height: 20px; }
+
+    @media (max-width: 900px) {
+      .page-hero h1 { font-size: 32px; }
+      .footer-inner { grid-template-columns: 1fr 1fr; }
+      nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="header-logo">
+      <img src="prism_logo_01.png" alt="PRISM">
+      <div class="header-logo-text">
+        <span class="brand">PRISM</span>
+        <span class="sub">Shared Expenses</span>
+      </div>
+    </a>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/#features">Features</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/about">About</a>
+      <a href="/help">Help</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/login" class="login">Log in</a>
+      <a href="/signup" class="btn btn-primary">Sign up</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <span class="section-label">Terms of Service</span>
+    <h1>Our <span class="gradient-text">agreement</span> with you.</h1>
+    <p>Please read these terms carefully before using Prism.</p>
+  </div>
+</section>
+
+<section class="legal-section">
+  <div class="container narrow">
+    <div class="legal-content">
+      <p class="last-updated">Last updated: June 1, 2026</p>
+
+      <h2>1. Acceptance of Terms</h2>
+      <p>By accessing or using Prism ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree, do not use the Service. These Terms apply to all visitors, users, and others who access or use the Service.</p>
+      <p>We reserve the right to update these Terms at any time. Continued use of the Service after changes constitutes acceptance of the new Terms. We will notify registered users of material changes via email or a notice on the Service.</p>
+
+      <h2>2. Description of Service</h2>
+      <p>Prism is a web-based application that helps users track shared expenses, split costs, and manage group finances. The Service allows users to create groups, add expenses, calculate balances, and record settlements.</p>
+      <p>Prism is a tool for record-keeping and calculation assistance. It is not a financial institution, payment processor, or bank. All financial transactions between users occur outside of Prism.</p>
+
+      <h2>3. Eligibility</h2>
+      <p>You must be at least 13 years old (or 16 in certain jurisdictions) to use the Service. By using Prism, you represent and warrant that you have the legal capacity to enter into these Terms.</p>
+      <p>If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization to these Terms.</p>
+
+      <h2>4. Accounts</h2>
+      <h3>4.1 Registration</h3>
+      <p>You must create an account to use Prism. You agree to provide accurate, current, and complete information during registration and to keep your account information updated.</p>
+      <h3>4.2 Responsibility</h3>
+      <p>You are solely responsible for maintaining the confidentiality of your password and for all activities that occur under your account. You must notify us immediately of any unauthorized use of your account.</p>
+      <h3>4.3 Termination</h3>
+      <p>You may delete your account at any time through the settings page. We may suspend or terminate your account if you violate these Terms or engage in conduct that harms the Service or other users.</p>
+
+      <h2>5. Acceptable Use</h2>
+      <p>You agree not to:</p>
+      <ul>
+        <li>Use the Service for any illegal purpose or in violation of any applicable laws.</li>
+        <li>Attempt to gain unauthorized access to any part of the Service, other accounts, or systems.</li>
+        <li>Interfere with or disrupt the integrity or performance of the Service.</li>
+        <li>Use the Service to harass, abuse, or harm other users.</li>
+        <li>Upload or transmit viruses, malware, or any malicious code.</li>
+        <li>Use the Service to facilitate fraudulent transactions or misrepresent financial information.</li>
+        <li>Scrape, crawl, or otherwise collect data from the Service without authorization.</li>
+      </ul>
+
+      <h2>6. User Content</h2>
+      <p>You retain ownership of any data, information, or content you submit to Prism ("User Content"). By submitting User Content, you grant us a limited license to store, process, and display your content solely for the purpose of providing the Service.</p>
+      <p>You represent that your User Content does not violate any third-party rights or applicable laws. We are not responsible for the accuracy, completeness, or legality of User Content.</p>
+
+      <h2>7. Privacy</h2>
+      <p>Your privacy is important to us. Our <a href="/privacy">Privacy Policy</a> explains how we collect, use, and protect your personal information. By using the Service, you agree to the collection and use of information in accordance with the Privacy Policy.</p>
+
+      <h2>8. Third-Party Services</h2>
+      <p>Prism integrates with third-party services including Supabase (authentication and database), Resend (email delivery), and Cloudflare (hosting). These services have their own terms and privacy policies. We are not responsible for the practices of these third parties.</p>
+
+      <h2>9. Intellectual Property</h2>
+      <p>The Prism name, logo, design, and all related intellectual property are owned by us. You may not reproduce, distribute, modify, or create derivative works without our explicit permission.</p>
+      <p>The Service is protected by copyright, trademark, and other intellectual property laws. Nothing in these Terms grants you any right to use our trademarks or branding without prior written consent.</p>
+
+      <h2>10. Disclaimer of Warranties</h2>
+      <p>The Service is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not warrant that the Service will be uninterrupted, error-free, secure, or free from harmful components.</p>
+      <p>Prism is a calculation and record-keeping tool. We make no representations about the accuracy, reliability, or completeness of financial calculations. Users should independently verify any financial decisions.</p>
+
+      <h2>11. Limitation of Liability</h2>
+      <p>To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or relating to your use of the Service. This includes, but is not limited to, financial losses, data loss, or business interruption.</p>
+      <p>Our total liability for any claims under these Terms shall not exceed the amount you have paid us (if any) in the twelve months preceding the claim.</p>
+
+      <h2>12. Indemnification</h2>
+      <p>You agree to indemnify and hold us harmless from any claims, damages, losses, liabilities, and expenses arising out of your use of the Service, your violation of these Terms, or your violation of any third-party rights.</p>
+
+      <h2>13. Dispute Resolution</h2>
+      <h3>13.1 Governing Law</h3>
+      <p>These Terms shall be governed by and construed in accordance with the laws of the State of Delaware, without regard to its conflict of law provisions.</p>
+      <h3>13.2 Informal Resolution</h3>
+      <p>Before filing any claim, you agree to attempt to resolve the dispute informally by contacting us at <a href="mailto:support@prismbudgeting.com">support@prismbudgeting.com</a>. We will work in good faith to resolve the issue within 30 days.</p>
+      <h3>13.3 Binding Arbitration</h3>
+      <p>If informal resolution fails, any dispute shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association. The arbitration shall be conducted in Delaware. Each party shall bear its own costs.</p>
+
+      <h2>14. Changes to Service</h2>
+      <p>We reserve the right to modify, suspend, or discontinue the Service (or any part thereof) at any time with or without notice. We will not be liable to you or any third party for any modification, suspension, or discontinuation.</p>
+
+      <h2>15. Termination</h2>
+      <p>We may terminate or suspend your access to the Service immediately, without prior notice, for conduct that we believe violates these Terms or is harmful to other users, us, or third parties.</p>
+      <p>Upon termination, your right to use the Service will immediately cease. The provisions of these Terms that by their nature should survive termination shall survive, including but not limited to intellectual property provisions, disclaimers, and limitations of liability.</p>
+
+      <h2>16. Severability</h2>
+      <p>If any provision of these Terms is held to be invalid or unenforceable, the remaining provisions shall continue in full force and effect. The invalid provision shall be reformed to the minimum extent necessary to make it enforceable.</p>
+
+      <h2>17. Entire Agreement</h2>
+      <p>These Terms, together with our Privacy Policy, constitute the entire agreement between you and us regarding the Service and supersede any prior agreements or understandings.</p>
+
+      <h2>18. Contact</h2>
+      <p>If you have questions about these Terms, please contact us:</p>
+      <ul>
+        <li><strong>Email:</strong> <a href="mailto:support@prismbudgeting.com">support@prismbudgeting.com</a></li>
+        <li><strong>Website:</strong> <a href="/contact">prismbudgeting.com/contact</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-brand-top">
+        <img src="prism_logo_01.png" alt="Prism logo">
+        <div>
+          <div class="brand-name">Prism</div>
+          <div class="brand-sub">Shared Expenses</div>
+        </div>
+      </div>
+      <p>Making shared expenses simple, fair, and stress-free for everyone.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="/#features">Features</a>
+      <a href="/#how-it-works">How It Works</a>
+      <a href="/#pricing">Pricing</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="/about">About</a>
+      <a href="/blog">Blog</a>
+      <a href="/careers">Careers</a>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="/help">Help Center</a>
+      <a href="/contact">Contact Us</a>
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/terms">Terms of Service</a>
+    </div>
+    <div class="footer-col">
+      <h4>Stay updated</h4>
+      <div class="footer-subscribe">
+        <input type="email" placeholder="Enter your email">
+        <button aria-label="Subscribe">
+          <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 9H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M11 5L15 9L11 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 Prism. All rights reserved.</p>
+    <div class="footer-socials">
+      <a href="https://x.com/prism" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+      <a href="https://instagram.com/prism" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
+      <a href="https://facebook.com/prism" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

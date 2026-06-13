@@ -385,8 +385,14 @@
     }
     .contact-card:hover { transform: translateY(-3px); }
     .contact-card .icon {
-      font-size: 32px;
-      margin-bottom: 16px;
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: var(--lavender);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
     }
     .contact-card h3 {
       font-size: 17px;
@@ -526,6 +532,14 @@
   </style>
 </head>
 <body>
+  <svg style="position:absolute;width:0;height:0;" aria-hidden="true">
+    <defs>
+      <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#4f6ef7"/>
+        <stop offset="100%" stop-color="#8b5cf6"/>
+      </linearGradient>
+    </defs>
+  </svg>
 
   <header>
     <div class="header-inner">
@@ -571,7 +585,14 @@
       </div>
       <div class="categories-grid">
         <div class="category-card">
-          <div class="category-icon">👥</div>
+          <div class="category-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
           <h3>Getting Started</h3>
           <p>New to Prism? Learn the basics of creating accounts, joining groups, and adding expenses.</p>
           <a href="#" class="topic-link">How to create an account →</a>
@@ -579,7 +600,13 @@
           <a href="#" class="topic-link">Adding an expense →</a>
         </div>
         <div class="category-card">
-          <div class="category-icon">💰</div>
+          <div class="category-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
+              <path d="M12 18V6"/>
+            </svg>
+          </div>
           <h3>Expenses & Splits</h3>
           <p>Understand how expenses are split, balances are calculated, and settlements work.</p>
           <a href="#" class="topic-link">How splits are calculated →</a>
@@ -587,7 +614,12 @@
           <a href="#" class="topic-link">Viewing your balance →</a>
         </div>
         <div class="category-card">
-          <div class="category-icon">🔗</div>
+          <div class="category-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </div>
           <h3>Groups & Invites</h3>
           <p>Manage group members, send invites, and control who sees what.</p>
           <a href="#" class="topic-link">Inviting people to a group →</a>
@@ -595,7 +627,12 @@
           <a href="#" class="topic-link">Group permissions →</a>
         </div>
         <div class="category-card">
-          <div class="category-icon">🔐</div>
+          <div class="category-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
           <h3>Account & Security</h3>
           <p>Manage your profile, password, and privacy settings.</p>
           <a href="#" class="topic-link">Changing your password →</a>
@@ -603,7 +640,20 @@
           <a href="#" class="topic-link">Privacy & data →</a>
         </div>
         <div class="category-card">
-          <div class="category-icon">📱</div>
+          <div class="category-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+              <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+              <rect x="9" y="9" width="6" height="6" rx="1"/>
+              <path d="M9 1v3"/>
+              <path d="M15 1v3"/>
+              <path d="M9 20v3"/>
+              <path d="M15 20v3"/>
+              <path d="M4 10h-2"/>
+              <path d="M22 10h-2"/>
+              <path d="M4 14h-2"/>
+              <path d="M22 14h-2"/>
+            </svg>
+          </div>
           <h3>Troubleshooting</h3>
           <p>Fix common issues and errors you might encounter.</p>
           <a href="#" class="topic-link">Login issues →</a>
@@ -611,7 +661,13 @@
           <a href="#" class="topic-link">Browser compatibility →</a>
         </div>
         <div class="category-card">
-          <div class="category-icon">❓</div>
+          <div class="category-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+              <path d="M12 17h.01"/>
+            </svg>
+          </div>
           <h3>FAQ</h3>
           <p>Quick answers to the most common questions.</p>
           <a href="#" class="topic-link">Is Prism free? →</a>
@@ -706,19 +762,33 @@
       </div>
       <div class="contact-grid">
         <div class="contact-card">
-          <div class="icon">📧</div>
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+          </div>
           <h3>Email Us</h3>
           <p>Send us an email and we'll get back to you within 24 hours.</p>
           <a href="mailto:support@prismbudgeting.com">support@prismbudgeting.com →</a>
         </div>
         <div class="contact-card">
-          <div class="icon">💬</div>
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
           <h3>Live Chat</h3>
           <p>Chat with our support team during business hours.</p>
           <a href="#">Start a chat →</a>
         </div>
         <div class="contact-card">
-          <div class="icon">🐦</div>
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+              <path d="M4 4l11.733 16h4.267l-11.733 -16z"/>
+              <path d="M4 20l6.768 -6.768m2.46 -2.46L20 4"/>
+            </svg>
+          </div>
           <h3>X (Twitter)</h3>
           <p>Follow us for updates, tips, and community support.</p>
           <a href="https://x.com/prism" target="_blank" rel="noopener noreferrer">@prism →</a>
@@ -749,7 +819,6 @@
         <h4>Company</h4>
         <a href="/about">About</a>
         <a href="/blog">Blog</a>
-        <a href="/careers">Careers</a>
       </div>
       <div class="footer-col">
         <h4>Support</h4>

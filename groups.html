@@ -41,9 +41,9 @@
             <p id="group-meta" style="color:var(--gray-400);font-size:14px;"></p>
           </div>
           <div class="group-actions">
-            <button class="btn btn-primary btn-sm" id="add-expense-btn-main" onclick="showAddExpenseModal()" style="display:none;">+ Add Expense</button>
-            <button class="btn btn-secondary btn-sm" id="invite-btn" onclick="showAddMemberModal()" style="display:none;">+ Invite</button>
-            <button class="btn btn-secondary btn-sm" id="group-settings-btn" onclick="showGroupSettingsModal()" style="display:none;">Settings</button>
+            <button class="btn btn-primary btn-sm" id="add-expense-btn-main" onclick="showAddExpenseModal()" style="display:none;">+ Add expense</button>
+            <button class="btn btn-secondary btn-sm" id="invite-btn" onclick="showAddMemberModal()" style="display:none;">Invite member</button>
+            <button class="btn btn-secondary btn-sm" id="group-settings-btn" onclick="showGroupSettingsModal()" style="display:none;">Group settings</button>
           </div>
         </div>
 
@@ -90,11 +90,24 @@
             <div class="spinner-lg"></div>
             <span>Loading members...</span>
           </div>
-          <div class="section-card" id="members-content" style="display:none;">
+          <div id="members-overview" class="member-overview" style="display:none;"></div>
+          <div class="section-card members-section" id="members-content" style="display:none;">
+            <div class="section-header">
+              <div>
+                <h3>Members</h3>
+                <p>People who can view this group and its receipts.</p>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm owner-only-action" onclick="showAddMemberModal()" style="display:none;">Invite member</button>
+            </div>
             <div id="members-list" class="members-list"></div>
           </div>
-          <div class="section-card" id="invites-card" style="display:none;">
-            <h3>Pending invites</h3>
+          <div class="section-card members-section" id="invites-card" style="display:none;">
+            <div class="section-header">
+              <div>
+                <h3>Pending invites</h3>
+                <p>Invites that have not been accepted yet.</p>
+              </div>
+            </div>
             <div id="invites-list" class="members-list"></div>
           </div>
         </div>
@@ -253,7 +266,7 @@
     import { getGroupById, getGroupMembers, removeGroupMember, updateGroupMemberName, updateGroupSettings } from '/src/lib/groups.ts';
     import { getGroupExpenses, createExpense, deleteExpense, getReceiptViewUrl, updateExpense } from '/src/lib/expenses.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
-    import { getGroupSettlements, markSettlementPaid } from '/src/lib/settlements.ts';
+    import { getGroupSettlements, markSettlementPaid, markSplitSettled } from '/src/lib/settlements.ts';
     import { buildInviteUrl, cancelInvite, createInvite, getGroupInvitations, sendInviteEmail } from '/src/lib/invites.ts';
     import { getProfile } from '/src/lib/database.ts';
 
@@ -311,6 +324,9 @@
         document.getElementById('add-expense-btn-main').style.display = isOwner ? 'inline-flex' : 'none';
         document.getElementById('invite-btn').style.display = isOwner ? 'inline-flex' : 'none';
         document.getElementById('group-settings-btn').style.display = isOwner ? 'inline-flex' : 'none';
+        document.querySelectorAll('.owner-only-action').forEach((el) => {
+          el.style.display = isOwner ? 'inline-flex' : 'none';
+        });
         await loadBalances();
         await loadExpenses();
         await loadMembers();
@@ -352,12 +368,15 @@
         if (debts.length === 0) {
           debtsEl.innerHTML = '<p style="color:var(--gray-400);font-size:14px;">All settled up!</p>';
         } else {
-          debtsEl.innerHTML = debts.map(d => `
+          debtsEl.innerHTML = debts.map(d => {
+            const canPay = currentUserRole === 'owner' || d.fromMemberId === currentMemberId;
+            const label = d.expenseTitle ? ` for ${escapeHtml(d.expenseTitle)}` : '';
+            return `
             <div class="settlement-row">
-              <span>${escapeHtml(d.fromName)} owes ${escapeHtml(d.toName)}</span>
-              <span class="amount">$${d.amount.toFixed(2)}</span>
-            </div>
-          `).join('');
+              <span>${escapeHtml(d.fromName)} owes ${escapeHtml(d.toName)}${label}</span>
+              <span class="amount">$${d.amount.toFixed(2)} ${canPay && d.splitId ? `<button class="btn btn-sm btn-primary" onclick="markPaid('${d.splitId}')">Mark paid</button>` : ''}</span>
+            </div>`;
+          }).join('');
         }
 
         const simplifiedEl = document.getElementById('simplified-list');
@@ -423,16 +442,23 @@
       try {
         document.getElementById('members-loading').style.display = 'none';
         document.getElementById('members-content').style.display = 'block';
+        renderMembersOverview();
         const el = document.getElementById('members-list');
         if (members.length === 0) { el.innerHTML = '<p style="color:var(--gray-400);">No members.</p>'; return; }
         const canManage = canManageMembers();
         el.innerHTML = members.map(m => `
           <div class="member-row">
             <div class="member-info">
-              <div class="member-avatar">${escapeHtml((m.display_name || '?')[0].toUpperCase())}</div>
+              <div class="member-avatar ${m.role === 'owner' ? 'owner' : ''}">${escapeHtml(getMemberInitial(m))}</div>
               <div>
-                <div class="member-name">${escapeHtml(m.display_name || 'Invited')}</div>
-                <div class="member-role">${escapeHtml(m.role === 'owner' ? 'owner' : 'member')}${m.user_id === currentUserId ? ' (you)' : ''}</div>
+                <div class="member-name-row">
+                  <span class="member-name">${escapeHtml(m.display_name || 'Invited')}</span>
+                  ${m.user_id === currentUserId ? '<span class="you-pill">You</span>' : ''}
+                </div>
+                <div class="member-role">
+                  <span class="role-pill ${m.role === 'owner' ? 'owner' : ''}">${escapeHtml(getMemberDisplayRole(m))}</span>
+                  ${m.profiles?.email ? `<span>${escapeHtml(m.profiles.email)}</span>` : ''}
+                </div>
               </div>
             </div>
             ${canManage ? `
@@ -448,6 +474,41 @@
         document.getElementById('members-content').style.display = 'block';
         document.getElementById('members-list').innerHTML = '<div class="form-error">Error loading members</div>';
       }
+    }
+
+    function renderMembersOverview() {
+      const overviewEl = document.getElementById('members-overview');
+      const owners = members.filter((member) => member.role === 'owner').length;
+      const regularMembers = members.filter((member) => member.role !== 'owner').length;
+      const pendingCount = invites.filter((invite) => invite.status === 'pending').length;
+
+      overviewEl.style.display = 'grid';
+      overviewEl.innerHTML = `
+        <div class="overview-card">
+          <span class="overview-label">Active members</span>
+          <strong>${members.length}</strong>
+        </div>
+        <div class="overview-card">
+          <span class="overview-label">Owner</span>
+          <strong>${owners}</strong>
+        </div>
+        <div class="overview-card">
+          <span class="overview-label">Members</span>
+          <strong>${regularMembers}</strong>
+        </div>
+        <div class="overview-card">
+          <span class="overview-label">Pending invites</span>
+          <strong>${pendingCount}</strong>
+        </div>
+      `;
+    }
+
+    function getMemberInitial(member) {
+      return (member.display_name || member.profiles?.email || '?')[0].toUpperCase();
+    }
+
+    function getMemberDisplayRole(member) {
+      return member.role === 'owner' ? 'owner' : 'member';
     }
 
     async function refreshMembers() {
@@ -477,6 +538,7 @@
       try {
         invites = await getGroupInvitations(groupId);
         const pendingInvites = invites.filter(invite => invite.status === 'pending');
+        renderMembersOverview();
         if (pendingInvites.length === 0) {
           invitesList.innerHTML = '<p style="color:var(--gray-400);font-size:14px;">No pending invites.</p>';
           return;
@@ -485,9 +547,12 @@
         invitesList.innerHTML = pendingInvites.map(invite => `
           <div class="member-row">
             <div class="member-info">
-              <div class="member-avatar">#</div>
+              <div class="member-avatar invite">#</div>
               <div>
-                <div class="member-name">${escapeHtml(invite.invited_email || 'Shareable invite')}</div>
+                <div class="member-name-row">
+                  <span class="member-name">${escapeHtml(invite.invited_email || 'Shareable invite')}</span>
+                  <span class="role-pill pending">pending</span>
+                </div>
                 <div class="member-role">Sent ${new Date(invite.created_at).toLocaleDateString()}${invite.expires_at ? ` · Expires ${new Date(invite.expires_at).toLocaleDateString()}` : ''}</div>
               </div>
             </div>
@@ -539,7 +604,7 @@
     }
 
     function canSettle(settlement) {
-      return currentUserRole === 'owner';
+      return currentUserRole === 'owner' || settlement.fromMemberId === currentMemberId;
     }
 
     function canManageMembers() {
@@ -1363,12 +1428,22 @@
       }
     });
 
-    // ── Settle up ──
+    // ── Settle up (simplified) ──
     window.settle = async (fromMemberId, toMemberId, amount) => {
       try {
         await markSettlementPaid(groupId, fromMemberId, toMemberId, amount);
         await loadBalances();
         await loadSettlements();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    // ── Mark a single split as paid ──
+    window.markPaid = async (splitId) => {
+      try {
+        await markSplitSettled(splitId);
+        await loadBalances();
       } catch (err) {
         alert(err.message);
       }
