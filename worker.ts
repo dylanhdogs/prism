@@ -4,18 +4,28 @@ type Env = {
   RESEND_FROM_EMAIL?: string;
   SUPABASE_URL?: string;
   SUPABASE_ANON_KEY?: string;
+  VITE_SUPABASE_URL?: string;
+  VITE_SUPABASE_ANON_KEY?: string;
   MINDEE_API_KEY?: string;
   MINDEE_RECEIPT_ENDPOINT?: string;
   STRIPE_SECRET_KEY?: string;
   APP_URL?: string;
 };
 
+function getSupabaseConfig(env: Env) {
+  return {
+    url: env.SUPABASE_URL || env.VITE_SUPABASE_URL,
+    anonKey: env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY,
+  };
+}
+
 async function getAuthenticatedUser(request: Request, env: Env) {
   const authorization = request.headers.get('Authorization');
-  if (!authorization || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return null;
-  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+  const supabase = getSupabaseConfig(env);
+  if (!authorization || !supabase.url || !supabase.anonKey) return null;
+  const response = await fetch(`${supabase.url}/auth/v1/user`, {
     headers: {
-      apikey: env.SUPABASE_ANON_KEY,
+      apikey: supabase.anonKey,
       Authorization: authorization,
     },
   });
@@ -24,11 +34,12 @@ async function getAuthenticatedUser(request: Request, env: Env) {
 }
 
 async function isExpenseOwner(expenseId: string, userId: string, request: Request, env: Env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return false;
+  const supabase = getSupabaseConfig(env);
+  if (!supabase.url || !supabase.anonKey) return false;
   const authorization = request.headers.get('Authorization');
-  const response = await fetch(`${env.SUPABASE_URL}/rest/v1/expenses?id=eq.${encodeURIComponent(expenseId)}&created_by=eq.${encodeURIComponent(userId)}&select=id`, {
+  const response = await fetch(`${supabase.url}/rest/v1/expenses?id=eq.${encodeURIComponent(expenseId)}&created_by=eq.${encodeURIComponent(userId)}&select=id`, {
     headers: {
-      apikey: env.SUPABASE_ANON_KEY,
+      apikey: supabase.anonKey,
       Authorization: authorization || '',
     },
   });
@@ -104,11 +115,12 @@ async function handleReceiptParse(request: Request, env: Env) {
 }
 
 async function supabaseUserRequest(path: string, request: Request, env: Env, init: RequestInit = {}) {
+  const supabase = getSupabaseConfig(env);
   const authorization = request.headers.get('Authorization') || '';
-  return fetch(`${env.SUPABASE_URL}${path}`, {
+  return fetch(`${supabase.url}${path}`, {
     ...init,
     headers: {
-      apikey: env.SUPABASE_ANON_KEY || '',
+      apikey: supabase.anonKey || '',
       Authorization: authorization,
       'Content-Type': 'application/json',
       ...(init.headers || {}),
@@ -130,7 +142,8 @@ async function stripeRequest(path: string, env: Env, body: URLSearchParams) {
 async function handlePayoutOnboarding(request: Request, env: Env) {
   const user = await getAuthenticatedUser(request, env);
   if (!user) return unauthorized();
-  if (!env.STRIPE_SECRET_KEY || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return Response.json({ error: 'Payout onboarding is not configured yet.' }, { status: 503 });
+  const supabase = getSupabaseConfig(env);
+  if (!env.STRIPE_SECRET_KEY || !supabase.url || !supabase.anonKey) return Response.json({ error: 'Payout onboarding is not configured yet.' }, { status: 503 });
 
   const profileResponse = await supabaseUserRequest(`/rest/v1/payout_profiles?user_id=eq.${encodeURIComponent(user.id)}&select=provider_account_id`, request, env);
   const profiles = await profileResponse.json() as { provider_account_id: string | null }[];
