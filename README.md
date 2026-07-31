@@ -195,6 +195,7 @@ The next database stage adds authenticated shared-receipt collaboration on top o
 5. Row Level Security keeps receipt corrections, owner payment methods, and confirmations owner-only, while members can only change their own claims and their own payment-sent state.
 6. The receipt workspace now lets owners manage PayPal, Venmo, Zelle, Cash App, or custom instructions, while members can safely copy/open instructions, mark payment sent, and view confirmation history.
 7. Account-level payout profile groundwork is in `016_payout_profiles.sql`. It stores only masked receiving-account metadata; raw bank credentials require secure provider onboarding and are intentionally not stored by Prism.
+8. Receipt extraction and secure payout onboarding are server-side integrations. Configure `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `MINDEE_API_KEY`, and `STRIPE_SECRET_KEY` as Cloudflare Worker secrets/vars before enabling them. The browser never receives either provider secret.
 
 ---
 

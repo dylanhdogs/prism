@@ -2,7 +2,157 @@ type Env = {
   ASSETS: { fetch: (request: Request) => Promise<Response> };
   RESEND_API_KEY?: string;
   RESEND_FROM_EMAIL?: string;
+  SUPABASE_URL?: string;
+  SUPABASE_ANON_KEY?: string;
+  MINDEE_API_KEY?: string;
+  MINDEE_RECEIPT_ENDPOINT?: string;
+  STRIPE_SECRET_KEY?: string;
+  APP_URL?: string;
 };
+
+async function getAuthenticatedUser(request: Request, env: Env) {
+  const authorization = request.headers.get('Authorization');
+  if (!authorization || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return null;
+  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: env.SUPABASE_ANON_KEY,
+      Authorization: authorization,
+    },
+  });
+  if (!response.ok) return null;
+  return response.json() as Promise<{ id: string }>;
+}
+
+async function isExpenseOwner(expenseId: string, userId: string, request: Request, env: Env) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return false;
+  const authorization = request.headers.get('Authorization');
+  const response = await fetch(`${env.SUPABASE_URL}/rest/v1/expenses?id=eq.${encodeURIComponent(expenseId)}&created_by=eq.${encodeURIComponent(userId)}&select=id`, {
+    headers: {
+      apikey: env.SUPABASE_ANON_KEY,
+      Authorization: authorization || '',
+    },
+  });
+  if (!response.ok) return false;
+  const rows = await response.json() as unknown[];
+  return rows.length > 0;
+}
+
+function unauthorized() {
+  return Response.json({ error: 'Authentication required.' }, { status: 401 });
+}
+
+function parseMoney(value: unknown) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number * 100) / 100 : 0;
+}
+
+function normalizeReceiptExtraction(payload: any) {
+  const prediction = payload?.document?.inference?.prediction
+    || payload?.document?.inference?.result
+    || payload?.document?.result
+    || payload?.result
+    || {};
+  const fieldValue = (field: any) => field?.value ?? field?.content ?? field ?? null;
+  const lineItems = fieldValue(prediction.line_items) || fieldValue(prediction.items) || [];
+  const items = (Array.isArray(lineItems) ? lineItems : []).map((entry: any, index: number) => {
+    const fields = entry?.fields || entry?.value || entry || {};
+    const name = fieldValue(fields.description) || fieldValue(fields.product_name) || fieldValue(fields.name) || `Item ${index + 1}`;
+    const quantity = parseMoney(fieldValue(fields.quantity)) || 1;
+    const unitPrice = parseMoney(fieldValue(fields.unit_price) || fieldValue(fields.unitPrice));
+    const total = parseMoney(fieldValue(fields.total_amount) || fieldValue(fields.total) || fieldValue(fields.amount)) || parseMoney(quantity * unitPrice);
+    return {
+      name: String(name),
+      quantity,
+      unit_price: unitPrice || null,
+      subtotal_amount: total,
+      line_number: index + 1,
+    };
+  }).filter((item: any) => item.name && item.subtotal_amount >= 0);
+
+  return {
+    merchant_name: fieldValue(prediction.merchant_name) || fieldValue(prediction.supplier_name) || null,
+    subtotal_amount: parseMoney(fieldValue(prediction.subtotal) || fieldValue(prediction.subtotal_amount)) || null,
+    tax_amount: parseMoney(fieldValue(prediction.total_tax) || fieldValue(prediction.tax)),
+    total_amount: parseMoney(fieldValue(prediction.total_amount) || fieldValue(prediction.total)) || null,
+    items,
+    raw: payload,
+  };
+}
+
+async function handleReceiptParse(request: Request, env: Env) {
+  const user = await getAuthenticatedUser(request, env);
+  if (!user) return unauthorized();
+  if (!env.MINDEE_API_KEY) return Response.json({ error: 'Receipt OCR is not configured yet.' }, { status: 503 });
+
+  const form = await request.formData();
+  const expenseId = String(form.get('expenseId') || '');
+  const file = form.get('file');
+  if (!expenseId || !(file instanceof File)) return Response.json({ error: 'Receipt file and expense are required.' }, { status: 400 });
+  if (!(await isExpenseOwner(expenseId, user.id, request, env))) return Response.json({ error: 'Only the receipt owner can extract this receipt.' }, { status: 403 });
+
+  const body = new FormData();
+  body.append('document', file, file.name);
+  const endpoint = env.MINDEE_RECEIPT_ENDPOINT || 'https://api.mindee.net/v1/products/mindee/expense_receipts/v3/predict';
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { Authorization: `Token ${env.MINDEE_API_KEY}` },
+    body,
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) return Response.json({ error: payload?.api_request?.error?.message || 'Receipt OCR failed.' }, { status: 502 });
+  return Response.json(normalizeReceiptExtraction(payload));
+}
+
+async function supabaseUserRequest(path: string, request: Request, env: Env, init: RequestInit = {}) {
+  const authorization = request.headers.get('Authorization') || '';
+  return fetch(`${env.SUPABASE_URL}${path}`, {
+    ...init,
+    headers: {
+      apikey: env.SUPABASE_ANON_KEY || '',
+      Authorization: authorization,
+      'Content-Type': 'application/json',
+      ...(init.headers || {}),
+    },
+  });
+}
+
+async function stripeRequest(path: string, env: Env, body: URLSearchParams) {
+  return fetch(`https://api.stripe.com/v1/${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body,
+  });
+}
+
+async function handlePayoutOnboarding(request: Request, env: Env) {
+  const user = await getAuthenticatedUser(request, env);
+  if (!user) return unauthorized();
+  if (!env.STRIPE_SECRET_KEY || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return Response.json({ error: 'Payout onboarding is not configured yet.' }, { status: 503 });
+
+  const profileResponse = await supabaseUserRequest(`/rest/v1/payout_profiles?user_id=eq.${encodeURIComponent(user.id)}&select=provider_account_id`, request, env);
+  const profiles = await profileResponse.json() as { provider_account_id: string | null }[];
+  let accountId = profiles[0]?.provider_account_id || '';
+  if (!accountId) {
+    const accountResponse = await stripeRequest('accounts', env, new URLSearchParams({ type: 'express', 'capabilities[transfers][requested]': 'true' }));
+    const account = await accountResponse.json() as { id?: string; error?: { message?: string } };
+    if (!accountResponse.ok || !account.id) return Response.json({ error: account.error?.message || 'Unable to create payout account.' }, { status: 502 });
+    accountId = account.id;
+    await supabaseUserRequest('/rest/v1/payout_profiles', request, env, {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ user_id: user.id, method_type: 'bank_transfer', display_name: 'My receiving account', provider_account_id: accountId, status: 'pending_provider' }),
+    });
+  }
+
+  const appUrl = (env.APP_URL || new URL(request.url).origin).replace(/\/$/, '');
+  const linkResponse = await stripeRequest('account_links', env, new URLSearchParams({ account: accountId, type: 'account_onboarding', refresh_url: `${appUrl}/dashboard?stripe=refresh`, return_url: `${appUrl}/dashboard?stripe=complete` }));
+  const link = await linkResponse.json() as { url?: string; error?: { message?: string } };
+  if (!linkResponse.ok || !link.url) return Response.json({ error: link.error?.message || 'Unable to start payout onboarding.' }, { status: 502 });
+  return Response.json({ url: link.url });
+}
 
 function rewriteAssetRequest(request: Request) {
   const url = new URL(request.url);
@@ -130,6 +280,12 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === '/api/send-invite' && request.method === 'POST') {
       return handleSendInvite(request, env);
+    }
+    if (url.pathname === '/api/receipt/parse' && request.method === 'POST') {
+      return handleReceiptParse(request, env);
+    }
+    if (url.pathname === '/api/payout/onboarding' && request.method === 'POST') {
+      return handlePayoutOnboarding(request, env);
     }
 
     return env.ASSETS.fetch(rewriteAssetRequest(request));

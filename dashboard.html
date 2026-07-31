@@ -86,6 +86,7 @@
         <div id="account-settings-error" class="form-error" style="display:none;"></div>
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" id="account-settings-cancel">Cancel</button>
+          <button type="button" class="btn btn-secondary" id="connect-payout-btn">Connect bank securely</button>
           <button type="submit" class="btn btn-primary" id="account-settings-save">Save receiving account</button>
         </div>
       </form>
@@ -115,7 +116,7 @@
   </div>
 
   <script type="module">
-    import { getPageAuthState, logOut, onAuthStateChange } from '/src/lib/auth.ts';
+    import { getPageAuthState, getSession, logOut, onAuthStateChange } from '/src/lib/auth.ts';
     import { getUserGroups, getGroupMembers, createGroup } from '/src/lib/groups.ts';
     import { getProfile } from '/src/lib/database.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
@@ -146,6 +147,28 @@
     document.getElementById('account-settings-btn')?.addEventListener('click', openAccountSettings);
     document.getElementById('account-settings-cancel')?.addEventListener('click', () => {
       document.getElementById('account-settings-modal').style.display = 'none';
+    });
+    document.getElementById('connect-payout-btn')?.addEventListener('click', async () => {
+      const button = document.getElementById('connect-payout-btn');
+      const errorEl = document.getElementById('account-settings-error');
+      button.disabled = true;
+      errorEl.style.display = 'none';
+      try {
+        const sessionResult = await getSession();
+        if (!sessionResult.data) throw new Error('Please sign in again.');
+        const response = await fetch('/api/payout/onboarding', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${sessionResult.data.access_token}` },
+        });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok || !payload?.url) throw new Error(payload?.error || 'Unable to start secure bank onboarding.');
+        window.location.href = payload.url;
+      } catch (err) {
+        errorEl.textContent = err.message || 'Unable to start secure bank onboarding.';
+        errorEl.style.display = 'block';
+      } finally {
+        button.disabled = false;
+      }
     });
     document.getElementById('account-settings-form')?.addEventListener('submit', async (event) => {
       event.preventDefault();

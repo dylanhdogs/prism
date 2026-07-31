@@ -228,9 +228,10 @@
       </div>
 
       <div id="receipt-workspace-body" style="display:none;">
-        <div class="receipt-toolbar">
-          <div class="receipt-toolbar-note" id="receipt-workspace-mode-note"></div>
-          <button type="button" class="btn btn-secondary btn-sm" id="receipt-file-view-btn" onclick="viewReceiptWorkspaceFile()">View uploaded file</button>
+          <div class="receipt-toolbar">
+            <div class="receipt-toolbar-note" id="receipt-workspace-mode-note"></div>
+            <button type="button" class="btn btn-secondary btn-sm" id="receipt-extract-btn" onclick="extractReceiptItems()">Read receipt automatically</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="receipt-file-view-btn" onclick="viewReceiptWorkspaceFile()">View uploaded file</button>
         </div>
 
         <div class="receipt-workspace-grid">
@@ -474,7 +475,7 @@
   </div>
 
   <script type="module">
-    import { getPageAuthState, logOut } from '/src/lib/auth.ts';
+    import { getPageAuthState, getSession, logOut } from '/src/lib/auth.ts';
     import { getGroupById, getGroupMembers, removeGroupMember, updateGroupMemberName, updateGroupSettings } from '/src/lib/groups.ts';
     import { getGroupExpenses, createExpense, deleteExpense, getReceiptViewUrl, updateExpense } from '/src/lib/expenses.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
@@ -1267,6 +1268,59 @@
       }
     };
 
+    window.extractReceiptItems = async function() {
+      if (!currentReceiptWorkspace?.isOwner || !currentReceiptWorkspace.receipt?.file_path) return;
+      const button = document.getElementById('receipt-extract-btn');
+      const errorEl = document.getElementById('receipt-workspace-error');
+      button.disabled = true;
+      button.classList.add('btn-loading');
+      errorEl.className = 'form-error';
+      errorEl.style.display = 'none';
+      try {
+        const sessionResult = await getSession();
+        if (!sessionResult.data) throw new Error('Please sign in again.');
+        const fileUrl = await getReceiptViewUrl(currentReceiptWorkspace.receipt);
+        const fileResponse = await fetch(fileUrl);
+        if (!fileResponse.ok) throw new Error('Unable to read the uploaded receipt file.');
+        const form = new FormData();
+        form.append('expenseId', currentReceiptWorkspace.expense.id);
+        form.append('file', await fileResponse.blob(), currentReceiptWorkspace.receipt.file_name || 'receipt');
+        const response = await fetch('/api/receipt/parse', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${sessionResult.data.access_token}` },
+          body: form,
+        });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(payload?.error || 'Receipt extraction failed.');
+        receiptDraftItems = (payload.items || []).map((item, index) => ({
+          id: '',
+          name: item.name || `Item ${index + 1}`,
+          description: '',
+          quantity: Number(item.quantity || 1),
+          unit_price: item.unit_price == null ? '' : Number(item.unit_price).toFixed(2),
+          subtotal_amount: Number(item.subtotal_amount || 0).toFixed(2),
+          owner_notes: '',
+          line_number: index + 1,
+          claims: [],
+        }));
+        if (payload.merchant_name) document.getElementById('receipt-merchant-name').value = payload.merchant_name;
+        if (payload.subtotal_amount != null) document.getElementById('receipt-subtotal-amount').value = Number(payload.subtotal_amount).toFixed(2);
+        if (payload.tax_amount != null) document.getElementById('receipt-tax-amount').value = Number(payload.tax_amount).toFixed(2);
+        if (payload.total_amount != null) document.getElementById('receipt-total-amount').value = Number(payload.total_amount).toFixed(2);
+        document.getElementById('receipt-extraction-status').value = 'needs_review';
+        renderReceiptItems();
+        errorEl.className = 'form-hint';
+        errorEl.textContent = `${receiptDraftItems.length} item${receiptDraftItems.length === 1 ? '' : 's'} extracted. Review and save them.`;
+        errorEl.style.display = 'block';
+      } catch (err) {
+        errorEl.textContent = err.message || 'Receipt extraction failed.';
+        errorEl.style.display = 'block';
+      } finally {
+        button.disabled = false;
+        button.classList.remove('btn-loading');
+      }
+    };
+
     function renderReceiptWorkspace() {
       if (!currentReceiptWorkspace) return;
 
@@ -1279,9 +1333,10 @@
         ? 'Owner mode: you can edit receipt metadata and line items.'
         : 'Member mode: you can claim or unclaim your own items only.';
       document.getElementById('receipt-file-view-btn').style.display = receipt?.file_path ? 'inline-flex' : 'none';
+      document.getElementById('receipt-extract-btn').style.display = isOwner && receipt?.file_path ? 'inline-flex' : 'none';
       document.getElementById('receipt-items-heading').textContent = isOwner ? 'Receipt items' : 'Claim your items';
       document.getElementById('receipt-items-description').textContent = isOwner
-        ? 'Enter the receipt rows manually for now. OCR-ready fields are saved for the next stage.'
+        ? 'Read the receipt automatically, review the extracted rows, then save corrections.'
         : 'Tap claim on the items that belong to you. The summary preview updates after each claim.';
 
       populateReceiptWorkspaceForm(receipt);
