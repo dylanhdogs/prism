@@ -116,7 +116,7 @@ async function handleReceiptParse(request: Request, env: Env) {
   const body = new FormData();
   body.append('model_id', modelId);
   body.append('file', file, file.name);
-  const endpoint = env.MINDEE_RECEIPT_ENDPOINT || 'https://api-v2.mindee.net/v2/inferences/enqueue';
+  const endpoint = env.MINDEE_RECEIPT_ENDPOINT || 'https://api-v2.mindee.net/v2/products/extraction/enqueue';
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { Authorization: mindeeApiKey },
