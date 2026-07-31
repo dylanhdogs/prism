@@ -137,7 +137,10 @@ async function handleReceiptParse(request: Request, env: Env) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     const pollResponse = await fetch(pollingUrl, { headers: { Authorization: mindeeApiKey } });
     payload = await pollResponse.json().catch(() => null);
-    if (!pollResponse.ok) return Response.json({ error: 'Mindee OCR polling failed.' }, { status: 502 });
+    if (!pollResponse.ok) {
+      const upstreamMessage = payload?.detail || payload?.title || payload?.error?.detail || payload?.api_request?.error?.message;
+      return Response.json({ error: `Mindee OCR polling failed (${pollResponse.status}). ${upstreamMessage || 'The OCR job status could not be retrieved.'}` }, { status: 502 });
+    }
     resultUrl = payload?.job?.result_url || null;
     if (payload?.job?.error) return Response.json({ error: payload.job.error.detail || 'Mindee could not read this receipt.' }, { status: 502 });
   }
