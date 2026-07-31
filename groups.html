@@ -211,6 +211,153 @@
     </div>
   </div>
 
+  <!-- Receipt Workspace Modal -->
+  <div id="receipt-workspace-modal" class="modal-overlay" style="display:none;">
+    <div class="modal modal-wide receipt-workspace-modal">
+      <div class="receipt-modal-header">
+        <div>
+          <h2 id="receipt-workspace-title">Receipt workspace</h2>
+          <p id="receipt-workspace-subtitle" class="receipt-modal-subtitle">Capture items, claims, and allocation preview.</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeReceiptWorkspaceModal()">Close</button>
+      </div>
+
+      <div id="receipt-workspace-loading" class="loading-state" style="padding:40px 24px;">
+        <div class="spinner-lg"></div>
+        <span>Loading receipt workspace...</span>
+      </div>
+
+      <div id="receipt-workspace-body" style="display:none;">
+        <div class="receipt-toolbar">
+          <div class="receipt-toolbar-note" id="receipt-workspace-mode-note"></div>
+          <button type="button" class="btn btn-secondary btn-sm" id="receipt-file-view-btn" onclick="viewReceiptWorkspaceFile()">View uploaded file</button>
+        </div>
+
+        <div class="receipt-workspace-grid">
+          <section class="receipt-panel">
+            <div class="section-header">
+              <div>
+                <h3>Receipt details</h3>
+                <p>Owner-entered values power future tax, tip, and repayment workflows.</p>
+              </div>
+            </div>
+            <form id="receipt-workspace-form">
+              <div class="receipt-field-grid">
+                <div class="form-group">
+                  <label for="receipt-merchant-name">Merchant</label>
+                  <input type="text" id="receipt-merchant-name" maxlength="120" placeholder="Coffee shop, restaurant, store">
+                </div>
+                <div class="form-group">
+                  <label for="receipt-extraction-status">Receipt status</label>
+                  <select id="receipt-extraction-status">
+                    <option value="pending">Pending</option>
+                    <option value="processing">Processing</option>
+                    <option value="needs_review">Needs review</option>
+                    <option value="ready">Ready</option>
+                    <option value="failed">Failed</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="receipt-subtotal-amount">Items subtotal ($)</label>
+                  <input type="number" id="receipt-subtotal-amount" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label for="receipt-total-amount">Receipt total ($)</label>
+                  <input type="number" id="receipt-total-amount" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label for="receipt-tax-amount">Tax ($)</label>
+                  <input type="number" id="receipt-tax-amount" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label for="receipt-tax-method">Tax allocation</label>
+                  <select id="receipt-tax-method">
+                    <option value="proportional_subtotal">Proportional to subtotal</option>
+                    <option value="equal">Equal among claimers</option>
+                    <option value="owner_adjusted">Owner adjusted later</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="receipt-tip-amount">Tip ($)</label>
+                  <input type="number" id="receipt-tip-amount" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label for="receipt-tip-method">Tip allocation</label>
+                  <select id="receipt-tip-method">
+                    <option value="proportional_subtotal">Proportional to subtotal</option>
+                    <option value="equal">Equal among claimers</option>
+                    <option value="owner_adjusted">Owner adjusted later</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="receipt-service-charge-amount">Service charge ($)</label>
+                  <input type="number" id="receipt-service-charge-amount" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label for="receipt-service-charge-method">Service charge allocation</label>
+                  <select id="receipt-service-charge-method">
+                    <option value="proportional_subtotal">Proportional to subtotal</option>
+                    <option value="equal">Equal among claimers</option>
+                    <option value="owner_adjusted">Owner adjusted later</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="receipt-discount-amount">Discount ($)</label>
+                  <input type="number" id="receipt-discount-amount" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label for="receipt-discount-method">Discount allocation</label>
+                  <select id="receipt-discount-method">
+                    <option value="proportional_subtotal">Proportional to subtotal</option>
+                    <option value="equal">Equal among claimers</option>
+                    <option value="owner_adjusted">Owner adjusted later</option>
+                  </select>
+                </div>
+              </div>
+              <div id="receipt-workspace-error" class="form-error" style="display:none;"></div>
+              <div class="modal-actions" id="receipt-workspace-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeReceiptWorkspaceModal()">Done</button>
+                <button type="submit" class="btn btn-primary" id="receipt-workspace-save-btn">Save receipt details</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="receipt-panel">
+            <div class="section-header">
+              <div>
+                <h3>Allocation preview</h3>
+                <p>Preview only. Claims drive member subtotals; direct payment confirmation comes later.</p>
+              </div>
+            </div>
+            <div id="receipt-summary-list" class="receipt-summary-list"></div>
+          </section>
+        </div>
+
+        <section class="receipt-panel" id="receipt-payments-panel">
+          <div class="section-header">
+            <div>
+              <h3>Direct repayment</h3>
+              <p id="receipt-payments-description">Choose a method and mark your payment sent. Prism never handles the money.</p>
+            </div>
+          </div>
+          <div id="receipt-payment-methods-list" class="receipt-payment-methods-list"></div>
+          <div id="receipt-payment-history" class="receipt-payment-history"></div>
+        </section>
+
+        <section class="receipt-panel">
+          <div class="section-header">
+            <div>
+              <h3 id="receipt-items-heading">Receipt items</h3>
+              <p id="receipt-items-description">Add line items for members to claim.</p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="receipt-add-item-btn" onclick="addReceiptItemRow()">+ Add item</button>
+          </div>
+          <div id="receipt-items-list" class="receipt-items-list"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
   <!-- Add Member Modal -->
   <div id="add-member-modal" class="modal-overlay" style="display:none;">
     <div class="modal">
@@ -334,6 +481,7 @@
     import { getGroupSettlements, markSettlementPaid, markSplitSettled, paySplits } from '/src/lib/settlements.ts';
     import { buildInviteUrl, cancelInvite, createInvite, getGroupInvitations, sendInviteEmail } from '/src/lib/invites.ts';
     import { getProfile } from '/src/lib/database.ts';
+    import { buildReceiptMemberSummaries, claimReceiptItem, confirmReceiptPayment, ensureReceiptPaymentRequests, getReceiptWorkspace, markReceiptPaymentSent, saveReceiptPaymentMethods, saveReceiptWorkspace } from '/src/lib/receiptWorkflow.ts';
 
     let groupId = '';
     let currentUserId = '';
@@ -345,6 +493,9 @@
     let selectedSplits = [];
     let currentGroup = null;
     let currentInviteGroupName = '';
+    let currentReceiptWorkspace = null;
+    let receiptDraftItems = [];
+    let receiptPaymentMethodDrafts = [];
 
     async function init() {
       const auth = await getPageAuthState();
@@ -495,7 +646,8 @@
               $${Number(e.amount).toFixed(2)}
               ${(currentUserRole === 'owner' || getExpenseReceipt(e)) ? `
                 <div class="expense-actions">
-                  ${getExpenseReceipt(e) ? `<button type="button" class="btn btn-secondary btn-sm" data-expense-action="view-receipt" data-expense-id="${e.id}">View receipt</button>` : ''}
+                  ${getExpenseReceipt(e) ? `<button type="button" class="btn btn-secondary btn-sm" data-expense-action="open-receipt-workspace" data-expense-id="${e.id}">${currentUserRole === 'owner' ? 'Manage receipt' : 'Claim items'}</button>` : ''}
+                  ${getExpenseReceipt(e) ? `<button type="button" class="btn btn-secondary btn-sm" data-expense-action="view-receipt" data-expense-id="${e.id}">View file</button>` : ''}
                   ${currentUserRole === 'owner' ? `
                   <button type="button" class="btn btn-secondary btn-sm" data-expense-action="edit" data-expense-id="${e.id}">Edit</button>
                   <button type="button" class="btn btn-danger btn-sm" data-expense-action="delete" data-expense-id="${e.id}">Delete</button>
@@ -675,10 +827,49 @@
       }
     }
 
+    async function reloadReceiptWorkspace() {
+      if (!currentReceiptWorkspace?.expense?.id) return;
+      currentReceiptWorkspace = await getReceiptWorkspace(currentReceiptWorkspace.expense.id);
+      if (currentReceiptWorkspace.isOwner) {
+        await ensureReceiptPaymentRequests(currentReceiptWorkspace);
+        currentReceiptWorkspace = await getReceiptWorkspace(currentReceiptWorkspace.expense.id);
+      }
+      receiptDraftItems = (currentReceiptWorkspace.items || []).map((item, index) => ({
+        id: item.id,
+        name: item.name || '',
+        description: item.description || '',
+        quantity: Number(item.quantity || 1),
+        unit_price: item.unit_price == null ? '' : Number(item.unit_price).toFixed(2),
+        subtotal_amount: Number(item.subtotal_amount || 0).toFixed(2),
+        owner_notes: item.owner_notes || '',
+        line_number: item.line_number ?? index + 1,
+        claims: item.claims || [],
+      }));
+      if (currentReceiptWorkspace.isOwner && receiptDraftItems.length === 0) {
+        addReceiptDraftItem();
+      }
+      receiptPaymentMethodDrafts = (currentReceiptWorkspace.paymentMethods || []).map((method) => ({ ...method }));
+      renderReceiptWorkspace();
+    }
+
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    function escapeAttribute(text) {
+      return String(text ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function parseOptionalMoney(value) {
+      if (value === '' || value == null) return null;
+      const amount = parseFloat(value);
+      return Number.isFinite(amount) ? roundMoney(amount) : null;
     }
 
     function canSettle(settlement) {
@@ -906,6 +1097,11 @@
         return;
       }
 
+      if (button.dataset.expenseAction === 'open-receipt-workspace') {
+        await openReceiptWorkspaceModal(expenseId, button);
+        return;
+      }
+
       if (button.dataset.expenseAction === 'edit') {
         window.showAddExpenseModal(expenseId);
         return;
@@ -999,6 +1195,420 @@
         </div>
       `;
     }
+
+    async function openReceiptWorkspaceModal(expenseId, button = null) {
+      const expense = expenses.find((item) => item.id === expenseId);
+      if (!getExpenseReceipt(expense)) {
+        window.alert('Attach a receipt file to this expense before opening the receipt workspace.');
+        return;
+      }
+
+      const modal = document.getElementById('receipt-workspace-modal');
+      const loadingEl = document.getElementById('receipt-workspace-loading');
+      const bodyEl = document.getElementById('receipt-workspace-body');
+      const errorEl = document.getElementById('receipt-workspace-error');
+
+      modal.style.display = 'flex';
+      loadingEl.style.display = 'flex';
+      bodyEl.style.display = 'none';
+      errorEl.style.display = 'none';
+
+      if (button) button.disabled = true;
+      try {
+        currentReceiptWorkspace = await getReceiptWorkspace(expenseId);
+        if (currentReceiptWorkspace.isOwner) {
+          await ensureReceiptPaymentRequests(currentReceiptWorkspace);
+          currentReceiptWorkspace = await getReceiptWorkspace(expenseId);
+        }
+        receiptDraftItems = (currentReceiptWorkspace.items || []).map((item, index) => ({
+          id: item.id,
+          name: item.name || '',
+          description: item.description || '',
+          quantity: Number(item.quantity || 1),
+          unit_price: item.unit_price == null ? '' : Number(item.unit_price).toFixed(2),
+          subtotal_amount: Number(item.subtotal_amount || 0).toFixed(2),
+          owner_notes: item.owner_notes || '',
+          line_number: item.line_number ?? index + 1,
+          claims: item.claims || [],
+        }));
+        receiptPaymentMethodDrafts = (currentReceiptWorkspace.paymentMethods || []).map((method) => ({ ...method }));
+        if (currentReceiptWorkspace.isOwner && receiptDraftItems.length === 0) {
+          addReceiptDraftItem();
+        }
+        renderReceiptWorkspace();
+        loadingEl.style.display = 'none';
+        bodyEl.style.display = 'block';
+      } catch (err) {
+        modal.style.display = 'none';
+        window.alert(err.message || 'Unable to open the receipt workspace.');
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+
+    window.closeReceiptWorkspaceModal = function() {
+      document.getElementById('receipt-workspace-modal').style.display = 'none';
+      document.getElementById('receipt-workspace-loading').style.display = 'flex';
+      document.getElementById('receipt-workspace-body').style.display = 'none';
+      document.getElementById('receipt-workspace-error').style.display = 'none';
+      currentReceiptWorkspace = null;
+      receiptDraftItems = [];
+      receiptPaymentMethodDrafts = [];
+    };
+
+    window.viewReceiptWorkspaceFile = async function() {
+      const receipt = currentReceiptWorkspace?.receipt;
+      if (!receipt) return;
+      try {
+        const url = await getReceiptViewUrl(receipt);
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } catch (err) {
+        window.alert(err.message || 'Unable to open receipt.');
+      }
+    };
+
+    function renderReceiptWorkspace() {
+      if (!currentReceiptWorkspace) return;
+
+      const { expense, receipt, isOwner } = currentReceiptWorkspace;
+      document.getElementById('receipt-workspace-title').textContent = expense.title || 'Receipt workspace';
+      document.getElementById('receipt-workspace-subtitle').textContent = isOwner
+        ? 'Upload complete. Add or correct line items so members can claim them on their own devices.'
+        : 'Claim only your own items. Totals below are a preview based on the current receipt setup.';
+      document.getElementById('receipt-workspace-mode-note').textContent = isOwner
+        ? 'Owner mode: you can edit receipt metadata and line items.'
+        : 'Member mode: you can claim or unclaim your own items only.';
+      document.getElementById('receipt-file-view-btn').style.display = receipt?.file_path ? 'inline-flex' : 'none';
+      document.getElementById('receipt-items-heading').textContent = isOwner ? 'Receipt items' : 'Claim your items';
+      document.getElementById('receipt-items-description').textContent = isOwner
+        ? 'Enter the receipt rows manually for now. OCR-ready fields are saved for the next stage.'
+        : 'Tap claim on the items that belong to you. The summary preview updates after each claim.';
+
+      populateReceiptWorkspaceForm(receipt);
+      setReceiptWorkspaceEditable(isOwner);
+      renderReceiptSummary();
+      renderReceiptPayments();
+      renderReceiptItems();
+    }
+
+    function populateReceiptWorkspaceForm(receipt) {
+      document.getElementById('receipt-merchant-name').value = receipt?.merchant_name || '';
+      document.getElementById('receipt-extraction-status').value = receipt?.extraction_status || 'pending';
+      document.getElementById('receipt-subtotal-amount').value = receipt?.subtotal_amount == null ? '' : Number(receipt.subtotal_amount).toFixed(2);
+      document.getElementById('receipt-total-amount').value = receipt?.total_amount == null ? '' : Number(receipt.total_amount).toFixed(2);
+      document.getElementById('receipt-tax-amount').value = Number(receipt?.tax_amount || 0).toFixed(2);
+      document.getElementById('receipt-tax-method').value = receipt?.tax_allocation_method || 'proportional_subtotal';
+      document.getElementById('receipt-tip-amount').value = Number(receipt?.tip_amount || 0).toFixed(2);
+      document.getElementById('receipt-tip-method').value = receipt?.tip_allocation_method || 'proportional_subtotal';
+      document.getElementById('receipt-service-charge-amount').value = Number(receipt?.service_charge_amount || 0).toFixed(2);
+      document.getElementById('receipt-service-charge-method').value = receipt?.service_charge_allocation_method || 'proportional_subtotal';
+      document.getElementById('receipt-discount-amount').value = Number(receipt?.discount_amount || 0).toFixed(2);
+      document.getElementById('receipt-discount-method').value = receipt?.discount_allocation_method || 'proportional_subtotal';
+    }
+
+    function setReceiptWorkspaceEditable(isOwner) {
+      document.querySelectorAll('#receipt-workspace-form input, #receipt-workspace-form select').forEach((field) => {
+        field.disabled = !isOwner;
+      });
+      document.getElementById('receipt-workspace-save-btn').style.display = isOwner ? 'inline-flex' : 'none';
+      document.getElementById('receipt-add-item-btn').style.display = isOwner ? 'inline-flex' : 'none';
+    }
+
+    function renderReceiptSummary() {
+      const summaryEl = document.getElementById('receipt-summary-list');
+      if (!currentReceiptWorkspace) {
+        summaryEl.innerHTML = '';
+        return;
+      }
+
+      const summaries = buildReceiptMemberSummaries(currentReceiptWorkspace)
+        .filter((summary) => summary.claimedItems > 0 || summary.subtotal > 0);
+
+      if (summaries.length === 0) {
+        summaryEl.innerHTML = '<p class="receipt-empty-state">No items claimed yet. Member totals will appear here once people start claiming items.</p>';
+        return;
+      }
+
+      summaryEl.innerHTML = summaries.map((summary) => `
+        <div class="receipt-summary-card">
+          <div class="receipt-summary-header">
+            <strong>${escapeHtml(summary.displayName)}</strong>
+            <span>${summary.claimedItems} item${summary.claimedItems === 1 ? '' : 's'}</span>
+          </div>
+          <div class="receipt-summary-values">
+            <span>Subtotal <strong>$${summary.subtotal.toFixed(2)}</strong></span>
+            <span>Tax <strong>$${summary.taxShare.toFixed(2)}</strong></span>
+            <span>Tip <strong>$${summary.tipShare.toFixed(2)}</strong></span>
+            <span>Fees <strong>$${summary.serviceChargeShare.toFixed(2)}</strong></span>
+            <span>Discount <strong>-$${summary.discountShare.toFixed(2)}</strong></span>
+          </div>
+          <div class="receipt-summary-total">Preview total $${summary.totalWithAllocations.toFixed(2)}</div>
+        </div>
+      `).join('');
+    }
+
+    function paymentMethodLabel(type) {
+      return ({ paypal: 'PayPal', venmo: 'Venmo', zelle: 'Zelle', cash_app: 'Cash App', custom_link: 'Custom link' })[type] || type;
+    }
+
+    function paymentStatusLabel(status) {
+      return ({ pending: 'Not marked sent', payment_sent: 'Payment sent', confirmed: 'Confirmed', cancelled: 'Cancelled' })[status] || status;
+    }
+
+    function renderReceiptPayments() {
+      const methodsEl = document.getElementById('receipt-payment-methods-list');
+      const historyEl = document.getElementById('receipt-payment-history');
+      if (!currentReceiptWorkspace) return;
+
+      if (currentReceiptWorkspace.isOwner) {
+        document.getElementById('receipt-payments-description').textContent = 'Add the direct methods you accept. Members will see these instructions and report payment sent.';
+        methodsEl.innerHTML = `
+          <div class="receipt-payment-method-editor-list">
+            ${receiptPaymentMethodDrafts.length ? receiptPaymentMethodDrafts.map((method, index) => `
+              <div class="receipt-payment-method-editor">
+                <div class="receipt-payment-method-editor-header">
+                  <strong>Method ${index + 1}</strong>
+                  <button type="button" class="btn btn-danger btn-sm" data-payment-action="remove-method" data-payment-index="${index}">Remove</button>
+                </div>
+                <div class="receipt-item-editor-grid">
+                  <div class="form-group">
+                    <label>Type</label>
+                    <select data-payment-field="method_type" data-payment-index="${index}">
+                      ${['paypal', 'venmo', 'zelle', 'cash_app', 'custom_link'].map((type) => `<option value="${type}" ${method.method_type === type ? 'selected' : ''}>${paymentMethodLabel(type)}</option>`).join('')}
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Display name</label>
+                    <input type="text" maxlength="80" data-payment-field="display_name" data-payment-index="${index}" value="${escapeAttribute(method.display_name || '')}" placeholder="My Venmo">
+                  </div>
+                  <div class="form-group">
+                    <label>Handle or account</label>
+                    <input type="text" maxlength="160" data-payment-field="handle" data-payment-index="${index}" value="${escapeAttribute(method.handle || '')}" placeholder="@your-handle or email">
+                  </div>
+                  <div class="form-group">
+                    <label>Payment URL (optional)</label>
+                    <input type="url" maxlength="500" data-payment-field="payment_url" data-payment-index="${index}" value="${escapeAttribute(method.payment_url || '')}" placeholder="https://...">
+                  </div>
+                  <div class="form-group receipt-item-editor-wide">
+                    <label>Instructions</label>
+                    <textarea rows="2" maxlength="500" data-payment-field="instructions" data-payment-index="${index}" placeholder="Tell members what to include in a note.">${escapeHtml(method.instructions || '')}</textarea>
+                  </div>
+                  <label class="split-option"><input type="checkbox" data-payment-field="is_active" data-payment-index="${index}" ${method.is_active !== false ? 'checked' : ''}> Available to members</label>
+                  <label class="split-option"><input type="radio" name="receipt-default-payment" data-payment-field="is_default" data-payment-index="${index}" ${method.is_default ? 'checked' : ''}> Default method</label>
+                </div>
+              </div>
+            `).join('') : '<p class="receipt-empty-state">No payment methods yet. Add one below so members know where to send repayment.</p>'}
+          </div>
+          <div class="modal-actions receipt-payment-actions">
+            <button type="button" class="btn btn-secondary btn-sm" data-payment-action="add-method">+ Add method</button>
+            <button type="button" class="btn btn-primary btn-sm" data-payment-action="save-methods">Save payment methods</button>
+          </div>
+        `;
+      } else {
+        document.getElementById('receipt-payments-description').textContent = 'Use one of the owner’s methods, then mark your payment sent. Prism never handles the money.';
+        const request = currentReceiptWorkspace.paymentRequests.find((item) => item.from_member_id === currentReceiptWorkspace.currentMemberId);
+        const methods = currentReceiptWorkspace.paymentMethods.filter((method) => method.is_active);
+        methodsEl.innerHTML = request ? `
+          <div class="receipt-payment-request-card">
+            <div class="receipt-payment-request-header"><strong>Amount requested</strong><strong>$${Number(request.amount_requested || 0).toFixed(2)}</strong></div>
+            <p class="form-hint">Status: ${paymentStatusLabel(request.status)}${request.payment_sent_at ? ` on ${new Date(request.payment_sent_at).toLocaleDateString()}` : ''}</p>
+            ${request.status === 'confirmed' ? '<p class="receipt-payment-confirmed">Owner confirmed this payment.</p>' : methods.length ? `
+              <label class="form-group">Payment method
+                <select id="receipt-payment-method-select">
+                  <option value="">Choose a method</option>
+                  ${methods.map((method) => `<option value="${method.id}" ${request.selected_payment_method_id === method.id ? 'selected' : ''}>${escapeHtml(method.display_name)} (${paymentMethodLabel(method.method_type)})</option>`).join('')}
+                </select>
+              </label>
+              <div class="receipt-payment-instructions" id="receipt-payment-instructions">Select a method to view its instructions.</div>
+              <div class="modal-actions receipt-payment-actions">
+                <button type="button" class="btn btn-secondary btn-sm" data-payment-action="copy-instructions">Copy instructions</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-payment-action="open-payment-link">Open payment link</button>
+                <button type="button" class="btn btn-primary btn-sm" data-payment-action="mark-sent" data-payment-request-id="${request.id}">Mark payment sent</button>
+              </div>
+            ` : '<p class="receipt-empty-state">The owner has not added an active payment method yet.</p>'}
+          </div>
+        ` : '<p class="receipt-empty-state">Your payment request will appear after the receipt owner saves the group split.</p>';
+        updateReceiptPaymentInstruction();
+      }
+
+      const memberById = new Map(currentReceiptWorkspace.members.map((member) => [member.id, member.display_name || 'Member']));
+      const requests = currentReceiptWorkspace.paymentRequests;
+      historyEl.innerHTML = requests.length ? `
+        <div class="receipt-payment-history-header"><strong>Payment history</strong><span>${requests.length} request${requests.length === 1 ? '' : 's'}</span></div>
+        ${requests.map((request) => `
+          <div class="receipt-payment-history-row">
+            <span>${escapeHtml(memberById.get(request.from_member_id) || 'Member')} → ${currentReceiptWorkspace.isOwner ? 'you' : 'receipt owner'}</span>
+            <span>$${Number(request.amount_requested || 0).toFixed(2)} · ${paymentStatusLabel(request.status)}</span>
+            ${currentReceiptWorkspace.isOwner && request.status === 'payment_sent' ? `<button type="button" class="btn btn-primary btn-sm" data-payment-action="confirm-payment" data-payment-request-id="${request.id}">Confirm</button>` : ''}
+          </div>
+        `).join('')}
+      ` : '<p class="receipt-empty-state">No payment history yet.</p>';
+    }
+
+    function getSelectedReceiptPaymentMethod() {
+      const methodId = document.getElementById('receipt-payment-method-select')?.value;
+      return currentReceiptWorkspace?.paymentMethods.find((method) => method.id === methodId) || null;
+    }
+
+    function updateReceiptPaymentInstruction() {
+      const instructionEl = document.getElementById('receipt-payment-instructions');
+      if (!instructionEl) return;
+      const method = getSelectedReceiptPaymentMethod();
+      instructionEl.textContent = method
+        ? [method.handle, method.instructions].filter(Boolean).join(' · ') || 'No additional instructions.'
+        : 'Select a method to view its instructions.';
+    }
+
+    function safePaymentUrl(method) {
+      if (!method?.payment_url) return null;
+      try {
+        const url = new URL(method.payment_url);
+        return url.protocol === 'https:' ? url.href : null;
+      } catch {
+        return null;
+      }
+    }
+
+    window.copyReceiptPaymentInstructions = async function() {
+      const method = getSelectedReceiptPaymentMethod();
+      if (!method) return window.alert('Choose a payment method first.');
+      const text = [method.display_name, method.handle, method.payment_url, method.instructions].filter(Boolean).join('\n');
+      try {
+        await navigator.clipboard.writeText(text);
+        window.alert('Payment instructions copied.');
+      } catch {
+        const area = document.createElement('textarea');
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+        window.alert('Payment instructions copied.');
+      }
+    };
+
+    window.openReceiptPaymentLink = function() {
+      const url = safePaymentUrl(getSelectedReceiptPaymentMethod());
+      if (!url) return window.alert('This method does not have a safe HTTPS payment link. Use the displayed handle or instructions.');
+      window.open(url, '_blank', 'noopener,noreferrer');
+    };
+
+    function renderReceiptItems() {
+      const itemsEl = document.getElementById('receipt-items-list');
+      if (!currentReceiptWorkspace) {
+        itemsEl.innerHTML = '';
+        return;
+      }
+
+      if (currentReceiptWorkspace.isOwner) {
+        if (receiptDraftItems.length === 0) {
+          itemsEl.innerHTML = '<p class="receipt-empty-state">Add your first line item to start the receipt workflow.</p>';
+          return;
+        }
+
+        itemsEl.innerHTML = receiptDraftItems.map((item, index) => `
+          <div class="receipt-item-editor">
+            <div class="receipt-item-editor-header">
+              <strong>Item ${index + 1}</strong>
+              <button type="button" class="btn btn-danger btn-sm" onclick="removeReceiptItemRow(${index})">Remove</button>
+            </div>
+            <div class="receipt-item-editor-grid">
+              <div class="form-group">
+                <label>Item name</label>
+                <input type="text" data-receipt-field="name" data-receipt-index="${index}" value="${escapeAttribute(item.name)}" maxlength="160" placeholder="Burger, coffee, fries">
+              </div>
+              <div class="form-group">
+                <label>Subtotal ($)</label>
+                <input type="number" min="0" step="0.01" data-receipt-field="subtotal_amount" data-receipt-index="${index}" value="${escapeAttribute(item.subtotal_amount)}" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" min="0.001" step="0.001" data-receipt-field="quantity" data-receipt-index="${index}" value="${escapeAttribute(String(item.quantity ?? 1))}" placeholder="1">
+              </div>
+              <div class="form-group">
+                <label>Unit price ($)</label>
+                <input type="number" min="0" step="0.01" data-receipt-field="unit_price" data-receipt-index="${index}" value="${escapeAttribute(item.unit_price)}" placeholder="Optional">
+              </div>
+              <div class="form-group receipt-item-editor-wide">
+                <label>Description</label>
+                <input type="text" data-receipt-field="description" data-receipt-index="${index}" value="${escapeAttribute(item.description || '')}" maxlength="200" placeholder="Optional extra detail">
+              </div>
+              <div class="form-group receipt-item-editor-wide">
+                <label>Owner notes</label>
+                <input type="text" data-receipt-field="owner_notes" data-receipt-index="${index}" value="${escapeAttribute(item.owner_notes || '')}" maxlength="200" placeholder="Notes for later OCR cleanup or member guidance">
+              </div>
+            </div>
+            <div class="receipt-item-claims-inline">${renderReceiptClaimLine(item.claims || [])}</div>
+          </div>
+        `).join('');
+        return;
+      }
+
+      if (!currentReceiptWorkspace.items.length) {
+        itemsEl.innerHTML = '<p class="receipt-empty-state">The receipt owner has not entered any line items yet.</p>';
+        return;
+      }
+
+      itemsEl.innerHTML = currentReceiptWorkspace.items.map((item) => {
+        const claimedByMe = item.claims.some((claim) => claim.member_id === currentReceiptWorkspace.currentMemberId);
+        const claimLabel = claimedByMe ? 'Unclaim' : 'Claim';
+        return `
+          <div class="receipt-item-card ${claimedByMe ? 'claimed' : ''}">
+            <div class="receipt-item-card-main">
+              <div>
+                <div class="receipt-item-name-row">
+                  <strong>${escapeHtml(item.name)}</strong>
+                  ${claimedByMe ? '<span class="receipt-claimed-pill">Claimed by you</span>' : ''}
+                </div>
+                ${item.description ? `<p class="receipt-item-description">${escapeHtml(item.description)}</p>` : ''}
+                <div class="receipt-item-meta">
+                  <span>${Number(item.quantity || 1).toFixed(3).replace(/\.?0+$/, '')} qty</span>
+                  <span>$${Number(item.subtotal_amount || 0).toFixed(2)}</span>
+                  ${item.unit_price != null ? `<span>$${Number(item.unit_price).toFixed(2)} each</span>` : ''}
+                </div>
+                <div class="receipt-item-claims-inline">${renderReceiptClaimLine(item.claims || [])}</div>
+              </div>
+              <button type="button" class="btn ${claimedByMe ? 'btn-secondary' : 'btn-primary'} btn-sm" data-claim-item-id="${item.id}">
+                ${claimLabel}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderReceiptClaimLine(claims) {
+      if (!claims?.length) return 'No one has claimed this item yet.';
+      return `Claimed by ${claims.map((claim) => escapeHtml(claim.member?.display_name || 'Unknown')).join(', ')}.`;
+    }
+
+    function addReceiptDraftItem() {
+      receiptDraftItems.push({
+        id: '',
+        name: '',
+        description: '',
+        quantity: 1,
+        unit_price: '',
+        subtotal_amount: '',
+        owner_notes: '',
+        line_number: receiptDraftItems.length + 1,
+        claims: [],
+      });
+    }
+
+    window.addReceiptItemRow = function() {
+      addReceiptDraftItem();
+      renderReceiptItems();
+    };
+
+    window.removeReceiptItemRow = function(index) {
+      receiptDraftItems.splice(index, 1);
+      if (receiptDraftItems.length === 0) addReceiptDraftItem();
+      receiptDraftItems.forEach((item, itemIndex) => {
+        item.line_number = itemIndex + 1;
+      });
+      renderReceiptItems();
+    };
 
     window.clearSelectedReceipt = function() {
       document.getElementById('expense-receipt').value = '';
@@ -1313,6 +1923,169 @@
       delete amountInput.dataset.autoFilled;
       fillRemainingCustomSplit();
       updateExpenseSplitPreview();
+    });
+
+    document.getElementById('receipt-items-list')?.addEventListener('input', (event) => {
+      const field = event.target.closest('[data-receipt-field]');
+      if (!field) return;
+
+      const index = Number(field.dataset.receiptIndex);
+      const key = field.dataset.receiptField;
+      if (!Number.isInteger(index) || !receiptDraftItems[index]) return;
+
+      receiptDraftItems[index][key] = field.value;
+    });
+
+    document.getElementById('receipt-items-list')?.addEventListener('click', async (event) => {
+      const claimButton = event.target.closest('[data-claim-item-id]');
+      if (!claimButton || !currentReceiptWorkspace) return;
+
+      claimButton.disabled = true;
+      try {
+        await claimReceiptItem(claimButton.dataset.claimItemId);
+        await reloadReceiptWorkspace();
+      } catch (err) {
+        window.alert(err.message || 'Unable to update your claim.');
+      } finally {
+        claimButton.disabled = false;
+      }
+    });
+
+    document.getElementById('receipt-payment-methods-list')?.addEventListener('change', (event) => {
+      const field = event.target.closest('[data-payment-field]');
+      if (!field) {
+        if (event.target.id === 'receipt-payment-method-select') updateReceiptPaymentInstruction();
+        return;
+      }
+      const index = Number(field.dataset.paymentIndex);
+      if (!Number.isInteger(index) || !receiptPaymentMethodDrafts[index]) return;
+      const key = field.dataset.paymentField;
+      if (key === 'is_default') {
+        receiptPaymentMethodDrafts.forEach((method, methodIndex) => { method.is_default = methodIndex === index; });
+      } else if (key === 'is_active') {
+        receiptPaymentMethodDrafts[index].is_active = field.checked;
+      } else {
+        receiptPaymentMethodDrafts[index][key] = field.value;
+      }
+    });
+
+    document.getElementById('receipt-payment-methods-list')?.addEventListener('input', (event) => {
+      const field = event.target.closest('[data-payment-field]');
+      if (!field || field.type === 'checkbox' || field.type === 'radio') return;
+      const index = Number(field.dataset.paymentIndex);
+      if (Number.isInteger(index) && receiptPaymentMethodDrafts[index]) {
+        receiptPaymentMethodDrafts[index][field.dataset.paymentField] = field.value;
+      }
+    });
+
+    document.getElementById('receipt-payment-methods-list')?.addEventListener('click', async (event) => {
+      const action = event.target.closest('[data-payment-action]')?.dataset.paymentAction;
+      if (!action || !currentReceiptWorkspace) return;
+      if (action === 'add-method') {
+        receiptPaymentMethodDrafts.push({ method_type: 'custom_link', display_name: '', handle: '', payment_url: '', instructions: '', is_active: true, is_default: receiptPaymentMethodDrafts.length === 0 });
+        renderReceiptPayments();
+        return;
+      }
+      if (action === 'remove-method') {
+        receiptPaymentMethodDrafts.splice(Number(event.target.closest('[data-payment-action]').dataset.paymentIndex), 1);
+        if (receiptPaymentMethodDrafts.length && !receiptPaymentMethodDrafts.some((method) => method.is_default && method.is_active)) receiptPaymentMethodDrafts[0].is_default = true;
+        renderReceiptPayments();
+        return;
+      }
+      if (action === 'save-methods') {
+        const button = event.target.closest('[data-payment-action]');
+        button.disabled = true;
+        try {
+          await saveReceiptPaymentMethods(groupId, receiptPaymentMethodDrafts);
+          await reloadReceiptWorkspace();
+        } catch (err) {
+          window.alert(err.message || 'Unable to save payment methods.');
+        } finally {
+          button.disabled = false;
+        }
+        return;
+      }
+      if (action === 'copy-instructions') return window.copyReceiptPaymentInstructions();
+      if (action === 'open-payment-link') return window.openReceiptPaymentLink();
+      if (action === 'mark-sent') {
+        const method = getSelectedReceiptPaymentMethod();
+        if (!method) return window.alert('Choose a payment method first.');
+        const button = event.target.closest('[data-payment-action]');
+        button.disabled = true;
+        try {
+          await markReceiptPaymentSent(button.dataset.paymentRequestId, method.id);
+          await reloadReceiptWorkspace();
+        } catch (err) {
+          window.alert(err.message || 'Unable to mark payment sent.');
+          button.disabled = false;
+        }
+        return;
+      }
+      if (action === 'confirm-payment') {
+        const button = event.target.closest('[data-payment-action]');
+        button.disabled = true;
+        try {
+          await confirmReceiptPayment(button.dataset.paymentRequestId);
+          await reloadReceiptWorkspace();
+        } catch (err) {
+          window.alert(err.message || 'Unable to confirm payment.');
+          button.disabled = false;
+        }
+      }
+    });
+
+    document.getElementById('receipt-workspace-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!currentReceiptWorkspace?.isOwner) return;
+
+      const errorEl = document.getElementById('receipt-workspace-error');
+      const saveBtn = document.getElementById('receipt-workspace-save-btn');
+      errorEl.style.display = 'none';
+      saveBtn.disabled = true;
+      saveBtn.classList.add('btn-loading');
+
+      const itemSubtotal = roundMoney(receiptDraftItems.reduce((sum, item) => {
+        const value = parseFloat(item.subtotal_amount);
+        return sum + (Number.isFinite(value) ? value : 0);
+      }, 0));
+
+      try {
+        await saveReceiptWorkspace({
+          groupId,
+          expenseId: currentReceiptWorkspace.expense.id,
+          merchantName: document.getElementById('receipt-merchant-name').value,
+          extractionStatus: document.getElementById('receipt-extraction-status').value,
+          subtotalAmount: parseOptionalMoney(document.getElementById('receipt-subtotal-amount').value) ?? itemSubtotal,
+          totalAmount: parseOptionalMoney(document.getElementById('receipt-total-amount').value),
+          taxAmount: parseOptionalMoney(document.getElementById('receipt-tax-amount').value) ?? 0,
+          taxAllocationMethod: document.getElementById('receipt-tax-method').value,
+          tipAmount: parseOptionalMoney(document.getElementById('receipt-tip-amount').value) ?? 0,
+          tipAllocationMethod: document.getElementById('receipt-tip-method').value,
+          serviceChargeAmount: parseOptionalMoney(document.getElementById('receipt-service-charge-amount').value) ?? 0,
+          serviceChargeAllocationMethod: document.getElementById('receipt-service-charge-method').value,
+          discountAmount: parseOptionalMoney(document.getElementById('receipt-discount-amount').value) ?? 0,
+          discountAllocationMethod: document.getElementById('receipt-discount-method').value,
+          items: receiptDraftItems.map((item, index) => ({
+            id: item.id || undefined,
+            name: item.name,
+            description: item.description,
+            quantity: parseFloat(item.quantity) || 1,
+            unit_price: parseOptionalMoney(item.unit_price),
+            subtotal_amount: parseOptionalMoney(item.subtotal_amount) ?? 0,
+            owner_notes: item.owner_notes,
+            line_number: index + 1,
+          })),
+        });
+
+        await reloadReceiptWorkspace();
+        await loadExpenses();
+      } catch (err) {
+        errorEl.textContent = err.message || 'Unable to save receipt details.';
+        errorEl.style.display = 'block';
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.classList.remove('btn-loading');
+      }
     });
 
     document.getElementById('split-members')?.addEventListener('change', (event) => {

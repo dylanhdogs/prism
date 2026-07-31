@@ -551,6 +551,214 @@ img { max-width: 100%; display: block; }
   gap: 8px;
   flex-shrink: 0;
 }
+.receipt-workspace-modal {
+  max-width: 1100px;
+}
+.receipt-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.receipt-modal-subtitle {
+  margin-top: 6px;
+  color: var(--gray-500);
+  font-size: 14px;
+}
+.receipt-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.receipt-toolbar-note {
+  font-size: 14px;
+  color: var(--gray-600);
+}
+.receipt-workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.receipt-panel {
+  border: 1px solid var(--gray-100);
+  border-radius: 18px;
+  padding: 20px;
+  background: #fff;
+}
+.receipt-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+.receipt-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.receipt-summary-card {
+  border: 1px solid var(--gray-100);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--gray-50);
+}
+.receipt-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--gray-700);
+}
+.receipt-summary-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--gray-600);
+}
+.receipt-summary-total {
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.receipt-payment-methods-list,
+.receipt-payment-history {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.receipt-payment-method-editor,
+.receipt-payment-request-card {
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--white);
+}
+
+.receipt-payment-method-editor-header,
+.receipt-payment-request-header,
+.receipt-payment-history-header,
+.receipt-payment-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.receipt-payment-method-editor-header {
+  margin-bottom: 12px;
+}
+
+.receipt-payment-actions {
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.receipt-payment-instructions {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--gray-50);
+  color: var(--gray-700);
+  white-space: pre-wrap;
+  font-size: 14px;
+}
+
+.receipt-payment-confirmed {
+  color: var(--success-600, #18794e);
+  font-weight: 600;
+}
+
+.receipt-payment-history {
+  border-top: 1px solid var(--gray-200);
+  margin-top: 18px;
+  padding-top: 18px;
+}
+
+.receipt-payment-history-row {
+  border-bottom: 1px solid var(--gray-100);
+  padding: 10px 0;
+  color: var(--gray-600);
+  font-size: 14px;
+}
+.receipt-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.receipt-item-editor,
+.receipt-item-card {
+  border: 1px solid var(--gray-100);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--gray-50);
+}
+.receipt-item-editor-header,
+.receipt-item-card-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.receipt-item-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+  margin-top: 14px;
+}
+.receipt-item-editor-wide {
+  grid-column: 1 / -1;
+}
+.receipt-item-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.receipt-item-description {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--gray-600);
+}
+.receipt-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--gray-500);
+}
+.receipt-item-claims-inline {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--gray-600);
+}
+.receipt-item-card.claimed {
+  border-color: rgba(59,130,246,0.3);
+  background: rgba(59,130,246,0.05);
+}
+.receipt-claimed-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(59,130,246,0.14);
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 700;
+}
+.receipt-empty-state {
+  font-size: 14px;
+  color: var(--gray-500);
+}
 
 .split-tools {
   display: flex;
@@ -931,6 +1139,26 @@ img { max-width: 100%; display: block; }
   .receipt-actions .btn {
     flex: 1;
     justify-content: center;
+  }
+
+  .receipt-modal-header,
+  .receipt-toolbar,
+  .receipt-item-editor-header,
+  .receipt-item-card-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .receipt-workspace-grid,
+  .receipt-field-grid,
+  .receipt-item-editor-grid,
+  .receipt-summary-values {
+    grid-template-columns: 1fr;
+  }
+
+  .receipt-workspace-modal {
+    max-width: 100%;
+    padding: 24px;
   }
 
   .modal-actions {

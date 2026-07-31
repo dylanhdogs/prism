@@ -184,6 +184,17 @@ Prism stores receipt files in Supabase Storage and receipt details in the databa
 3. If you create the bucket manually instead, make sure it is private and named exactly `receipts`.
 4. Receipt uploads support images and PDFs up to 10 MB.
 
+### Shared receipt workflow
+
+The next database stage adds authenticated shared-receipt collaboration on top of the existing expense model.
+
+1. Run `015_shared_receipt_workflow.sql` after `014_expense_receipts.sql`.
+2. Receipt metadata now stores OCR/extraction state plus owner-adjustable tax, tip, service-charge, and discount allocation rules.
+3. New `receipt_items` and `receipt_item_claims` tables support owner-managed line items with member-owned claim rows.
+4. New `receipt_payment_methods` and `receipt_payment_requests` tables support direct repayment to the receipt owner without Prism moving money.
+5. Row Level Security keeps receipt corrections, owner payment methods, and confirmations owner-only, while members can only change their own claims and their own payment-sent state.
+6. The receipt workspace now lets owners manage PayPal, Venmo, Zelle, Cash App, or custom instructions, while members can safely copy/open instructions, mark payment sent, and view confirmation history.
+
 ---
 
 ## Database Migrations
@@ -206,6 +217,7 @@ All migrations are in `supabase/migrations/`. Run them in order:
 | `012_persistent_guest_accounts.sql` | Durable browser guest access + guest group membership |
 | `013_owner_only_write_access.sql` | Owner-only edit permissions for groups, invites, expenses, and settlements |
 | `014_expense_receipts.sql` | Private receipt uploads linked to expenses |
+| `015_shared_receipt_workflow.sql` | Shared receipt line items, claims, allocation metadata, owner payment methods, and payment confirmation states |
 
 Each file includes:
 - `CREATE TABLE` statements
@@ -352,6 +364,8 @@ prism/
 - **Balances**: Calculate who owes who, total owed/paid per member, simplified settlement suggestions.
 - **Settlements**: Record payments between members.
 - **Invites**: Generate invite links with unique tokens, accept invites, redirect unauthenticated users.
+- **Receipt workflow schema**: Owner-managed receipt extraction data, member item claims, direct payment-method profiles, and receipt-specific payment tracking are now modeled in the database.
+- **Receipt workspace UI**: Group members can open a shared receipt workspace from the expenses tab. Owners can enter/correct line items manually, and members can claim or unclaim their own items with allocation previews.
 - **RLS**: Row Level Security on all tables. Users can only access data for groups they belong to.
 - **TypeScript types**: Full type definitions matching the database schema.
 - **Responsive CSS**: App pages work on mobile and desktop.

@@ -31,6 +31,26 @@ export interface Database {
         Insert: Omit<ExpenseReceipt, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<ExpenseReceipt, 'id'>>;
       };
+      receipt_items: {
+        Row: ReceiptItem;
+        Insert: Omit<ReceiptItem, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<ReceiptItem, 'id'>>;
+      };
+      receipt_item_claims: {
+        Row: ReceiptItemClaim;
+        Insert: Omit<ReceiptItemClaim, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<ReceiptItemClaim, 'id'>>;
+      };
+      receipt_payment_methods: {
+        Row: ReceiptPaymentMethod;
+        Insert: Omit<ReceiptPaymentMethod, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<ReceiptPaymentMethod, 'id'>>;
+      };
+      receipt_payment_requests: {
+        Row: ReceiptPaymentRequest;
+        Insert: Omit<ReceiptPaymentRequest, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<ReceiptPaymentRequest, 'id'>>;
+      };
       settlements: {
         Row: Settlement;
         Insert: Omit<Settlement, 'id' | 'created_at'>;
@@ -113,6 +133,12 @@ export interface ExpenseSplit {
   member_id: string;
   amount_owed: number;
   is_settled: boolean;
+  allocation_source: string;
+  subtotal_amount: number;
+  tax_amount: number;
+  tip_amount: number;
+  service_charge_amount: number;
+  discount_amount: number;
   created_at: string;
   updated_at: string;
 }
@@ -126,6 +152,90 @@ export interface ExpenseReceipt {
   file_type: string;
   file_size: number;
   uploaded_by: string;
+  extraction_status: string;
+  merchant_name: string | null;
+  subtotal_amount: number | null;
+  tax_amount: number;
+  tip_amount: number;
+  service_charge_amount: number;
+  discount_amount: number;
+  total_amount: number | null;
+  tax_allocation_method: string;
+  tip_allocation_method: string;
+  service_charge_allocation_method: string;
+  discount_allocation_method: string;
+  ocr_payload: Record<string, unknown> | null;
+  extracted_at: string | null;
+  corrected_at: string | null;
+  corrected_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReceiptItem {
+  id: string;
+  expense_receipt_id: string;
+  expense_id: string;
+  group_id: string;
+  line_number: number | null;
+  name: string;
+  description: string | null;
+  quantity: number;
+  unit_price: number | null;
+  subtotal_amount: number;
+  status: string;
+  owner_notes: string | null;
+  extracted_metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReceiptItemClaim {
+  id: string;
+  receipt_item_id: string;
+  expense_id: string;
+  group_id: string;
+  member_id: string;
+  claim_quantity: number;
+  claim_amount_override: number | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReceiptPaymentMethod {
+  id: string;
+  group_id: string;
+  owner_member_id: string;
+  owner_user_id: string;
+  method_type: string;
+  display_name: string;
+  handle: string | null;
+  payment_url: string | null;
+  instructions: string | null;
+  is_active: boolean;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReceiptPaymentRequest {
+  id: string;
+  expense_split_id: string;
+  expense_id: string;
+  group_id: string;
+  from_member_id: string;
+  to_member_id: string;
+  selected_payment_method_id: string | null;
+  amount_requested: number;
+  amount_sent: number | null;
+  status: string;
+  payment_reference: string | null;
+  member_note: string | null;
+  owner_note: string | null;
+  payment_sent_at: string | null;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
   created_at: string;
   updated_at: string;
 }
