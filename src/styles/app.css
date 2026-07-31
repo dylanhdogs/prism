@@ -916,6 +916,11 @@ img { max-width: 100%; display: block; }
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(15,14,46,0.25);
 }
+.modal.receipt-workspace-modal {
+  width: min(1100px, calc(100vw - 48px));
+  max-width: 1100px;
+  box-sizing: border-box;
+}
 .modal h2 { font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 20px; }
 .modal .form-group { margin-bottom: 16px; }
 .modal-actions {
@@ -1156,7 +1161,8 @@ img { max-width: 100%; display: block; }
     grid-template-columns: 1fr;
   }
 
-  .receipt-workspace-modal {
+  .modal.receipt-workspace-modal {
+    width: 100%;
     max-width: 100%;
     padding: 24px;
   }
