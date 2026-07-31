@@ -179,9 +179,15 @@ export async function getReceiptWorkspace(expenseId: string): Promise<ReceiptWor
 
   if (requestsError) throw new Error(requestsError.message);
 
-  const receipt = Array.isArray(workspaceExpense.receipt)
+  const receipt = (Array.isArray(workspaceExpense.receipt)
     ? workspaceExpense.receipt[0] || null
-    : workspaceExpense.receipt || null;
+    : workspaceExpense.receipt || null) as (ExpenseReceipt & {
+      items?: (ReceiptItem & {
+        claims?: (ReceiptItemClaim & {
+          member?: Pick<GroupMember, 'id' | 'display_name' | 'user_id'> | null;
+        })[];
+      })[];
+    }) | null;
   const items = (receipt?.items || [])
     .filter((item) => item.status !== 'removed')
     .sort((a, b) => {
@@ -305,8 +311,8 @@ export async function ensureReceiptPaymentRequests(workspace: ReceiptWorkspace) 
 
 export async function markReceiptPaymentSent(requestId: string, methodId: string, amountSent?: number | null) {
   const supabase = getSupabaseClient();
-  const { user } = await getCurrentUser();
-  if (!user.data) throw new Error('Not authenticated.');
+  const { data: user } = await getCurrentUser();
+  if (!user) throw new Error('Not authenticated.');
   const { data: request, error: requestError } = await supabase
     .from('receipt_payment_requests')
     .select('id, expense_id, group_id, from_member_id, amount_requested')
@@ -325,13 +331,13 @@ export async function markReceiptPaymentSent(requestId: string, methodId: string
     })
     .eq('id', requestId);
   if (error) throw new Error(error.message);
-  await logActivity(request.group_id, user.data.id, 'receipt_payment_sent', { expense_id: request.expense_id, payment_request_id: requestId });
+  await logActivity(request.group_id, user.id, 'receipt_payment_sent', { expense_id: request.expense_id, payment_request_id: requestId });
 }
 
 export async function confirmReceiptPayment(requestId: string) {
   const supabase = getSupabaseClient();
-  const { user } = await getCurrentUser();
-  if (!user.data) throw new Error('Not authenticated.');
+  const { data: user } = await getCurrentUser();
+  if (!user) throw new Error('Not authenticated.');
   const { data: request, error: requestError } = await supabase
     .from('receipt_payment_requests')
     .select('id, expense_id, group_id, to_member_id, status')
@@ -347,7 +353,7 @@ export async function confirmReceiptPayment(requestId: string) {
     .update({ status: 'confirmed' })
     .eq('id', requestId);
   if (error) throw new Error(error.message);
-  await logActivity(request.group_id, user.data.id, 'receipt_payment_confirmed', { expense_id: request.expense_id, payment_request_id: requestId });
+  await logActivity(request.group_id, user.id, 'receipt_payment_confirmed', { expense_id: request.expense_id, payment_request_id: requestId });
 }
 
 export async function saveReceiptWorkspace(input: SaveReceiptWorkspaceInput) {

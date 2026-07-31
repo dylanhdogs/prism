@@ -28,6 +28,7 @@
         <h2>Dashboard</h2>
         <div class="app-header-right">
           <span class="user-name" id="user-name"></span>
+          <button class="btn btn-secondary btn-sm" id="account-settings-btn" type="button">Account settings</button>
         </div>
       </header>
       <div class="app-content">
@@ -46,6 +47,49 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Account Settings Modal -->
+  <div id="account-settings-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h2>Receiving account</h2>
+      <p class="form-hint" style="margin:-8px 0 18px;">Add the safe details other members need to repay you. Prism never stores raw bank credentials.</p>
+      <form id="account-settings-form">
+        <div class="form-group">
+          <label for="payout-method-type">Receiving method</label>
+          <select id="payout-method-type">
+            <option value="bank_transfer">Bank transfer</option>
+            <option value="paypal">PayPal</option>
+            <option value="venmo">Venmo</option>
+            <option value="zelle">Zelle</option>
+            <option value="cash_app">Cash App</option>
+            <option value="custom">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="payout-display-name">Display name</label>
+          <input type="text" id="payout-display-name" maxlength="80" placeholder="My receiving account" required>
+        </div>
+        <div class="form-group">
+          <label for="payout-account-label">Account label</label>
+          <input type="text" id="payout-account-label" maxlength="120" placeholder="Checking account ending in 1234">
+          <span class="form-hint">Use a masked label only. Do not enter a full account or routing number.</span>
+        </div>
+        <div class="form-group">
+          <label for="payout-masked-account">Masked account or handle</label>
+          <input type="text" id="payout-masked-account" maxlength="80" placeholder="•••• 1234 or @handle">
+        </div>
+        <div class="form-group">
+          <label for="payout-instructions">Instructions</label>
+          <textarea id="payout-instructions" rows="3" maxlength="500" placeholder="Optional note for people sending repayment"></textarea>
+        </div>
+        <div id="account-settings-error" class="form-error" style="display:none;"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="account-settings-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="account-settings-save">Save receiving account</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- Create Group Modal -->
@@ -75,9 +119,56 @@
     import { getUserGroups, getGroupMembers, createGroup } from '/src/lib/groups.ts';
     import { getProfile } from '/src/lib/database.ts';
     import { calculateGroupBalances } from '/src/lib/balances.ts';
+    import { getPayoutProfile, savePayoutProfile } from '/src/lib/payoutProfiles.ts';
 
     let currentUserId = '';
     let initialAuthCheck = true;
+
+    async function openAccountSettings() {
+      const modal = document.getElementById('account-settings-modal');
+      const errorEl = document.getElementById('account-settings-error');
+      errorEl.style.display = 'none';
+      try {
+        const profile = await getPayoutProfile();
+        document.getElementById('payout-method-type').value = profile?.method_type || 'bank_transfer';
+        document.getElementById('payout-display-name').value = profile?.display_name || 'My receiving account';
+        document.getElementById('payout-account-label').value = profile?.account_label || '';
+        document.getElementById('payout-masked-account').value = profile?.masked_account || '';
+        document.getElementById('payout-instructions').value = profile?.instructions || '';
+        modal.style.display = 'flex';
+      } catch (err) {
+        errorEl.textContent = err.message || 'Unable to load receiving account.';
+        errorEl.style.display = 'block';
+        modal.style.display = 'flex';
+      }
+    }
+
+    document.getElementById('account-settings-btn')?.addEventListener('click', openAccountSettings);
+    document.getElementById('account-settings-cancel')?.addEventListener('click', () => {
+      document.getElementById('account-settings-modal').style.display = 'none';
+    });
+    document.getElementById('account-settings-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = document.getElementById('account-settings-save');
+      const errorEl = document.getElementById('account-settings-error');
+      button.disabled = true;
+      errorEl.style.display = 'none';
+      try {
+        await savePayoutProfile({
+          method_type: document.getElementById('payout-method-type').value,
+          display_name: document.getElementById('payout-display-name').value,
+          account_label: document.getElementById('payout-account-label').value,
+          masked_account: document.getElementById('payout-masked-account').value,
+          instructions: document.getElementById('payout-instructions').value,
+        });
+        document.getElementById('account-settings-modal').style.display = 'none';
+      } catch (err) {
+        errorEl.textContent = err.message || 'Unable to save receiving account.';
+        errorEl.style.display = 'block';
+      } finally {
+        button.disabled = false;
+      }
+    });
 
     async function init() {
       try {

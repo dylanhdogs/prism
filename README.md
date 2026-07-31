@@ -194,6 +194,7 @@ The next database stage adds authenticated shared-receipt collaboration on top o
 4. New `receipt_payment_methods` and `receipt_payment_requests` tables support direct repayment to the receipt owner without Prism moving money.
 5. Row Level Security keeps receipt corrections, owner payment methods, and confirmations owner-only, while members can only change their own claims and their own payment-sent state.
 6. The receipt workspace now lets owners manage PayPal, Venmo, Zelle, Cash App, or custom instructions, while members can safely copy/open instructions, mark payment sent, and view confirmation history.
+7. Account-level payout profile groundwork is in `016_payout_profiles.sql`. It stores only masked receiving-account metadata; raw bank credentials require secure provider onboarding and are intentionally not stored by Prism.
 
 ---
 

@@ -26,6 +26,11 @@ export interface Database {
         Insert: Omit<ExpenseSplit, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<ExpenseSplit, 'id'>>;
       };
+      payout_profiles: {
+        Row: PayoutProfile;
+        Insert: Omit<PayoutProfile, 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<PayoutProfile, 'user_id'>>;
+      };
       expense_receipts: {
         Row: ExpenseReceipt;
         Insert: Omit<ExpenseReceipt, 'id' | 'created_at' | 'updated_at'>;
@@ -139,6 +144,19 @@ export interface ExpenseSplit {
   tip_amount: number;
   service_charge_amount: number;
   discount_amount: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PayoutProfile {
+  user_id: string;
+  method_type: string;
+  display_name: string;
+  account_label: string | null;
+  masked_account: string | null;
+  instructions: string | null;
+  provider_account_id: string | null;
+  status: string;
   created_at: string;
   updated_at: string;
 }
