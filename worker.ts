@@ -134,18 +134,21 @@ async function handleReceiptParse(request: Request, env: Env) {
   let resultUrl = payload?.job?.result_url || null;
   const jobId = payload?.job?.id || null;
   const pollingUrl = jobId ? `https://api-v2.mindee.com/v2/jobs/${encodeURIComponent(jobId)}` : payload?.job?.polling_url || null;
+  let lastPollError = '';
   for (let attempt = 0; pollingUrl && !resultUrl && attempt < 20; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 3000 : 1000));
     const pollResponse = await fetch(pollingUrl, { headers: { Authorization: mindeeApiKey } });
     payload = await pollResponse.json().catch(() => null);
     if (!pollResponse.ok) {
       const upstreamMessage = payload?.detail || payload?.title || payload?.error?.detail || payload?.api_request?.error?.message;
-      return Response.json({ error: `Mindee OCR polling failed (${pollResponse.status}). ${upstreamMessage || 'The OCR job status could not be retrieved.'}` }, { status: 502 });
+      lastPollError = `Mindee OCR polling failed (${pollResponse.status}). ${upstreamMessage || 'The OCR job status could not be retrieved.'}`;
+      if (pollResponse.status === 404 || pollResponse.status === 530) continue;
+      return Response.json({ error: lastPollError }, { status: 502 });
     }
     resultUrl = payload?.job?.result_url || null;
     if (payload?.job?.error) return Response.json({ error: payload.job.error.detail || 'Mindee could not read this receipt.' }, { status: 502 });
   }
-  if (!resultUrl) return Response.json({ error: 'Mindee OCR timed out. Please try again or enter the line items manually.' }, { status: 504 });
+  if (!resultUrl) return Response.json({ error: lastPollError || 'Mindee OCR timed out. Please try again or enter the line items manually.' }, { status: 504 });
   const resultResponse = await fetch(resultUrl, { headers: { Authorization: mindeeApiKey } });
   const resultPayload = await resultResponse.json().catch(() => null);
   if (!resultResponse.ok) return Response.json({ error: 'Mindee OCR result retrieval failed.' }, { status: 502 });
