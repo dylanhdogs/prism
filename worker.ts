@@ -133,7 +133,7 @@ async function handleReceiptParse(request: Request, env: Env) {
 
   let resultUrl = payload?.job?.result_url || null;
   const jobId = payload?.job?.id || null;
-  const pollingUrl = jobId ? `https://api-v2.mindee.com/v2/jobs/${encodeURIComponent(jobId)}` : payload?.job?.polling_url || null;
+  const pollingUrl = payload?.job?.polling_url || (jobId ? `https://api-v2.mindee.com/v2/jobs/${encodeURIComponent(jobId)}` : null);
   let lastPollError = '';
   for (let attempt = 0; pollingUrl && !resultUrl && attempt < 20; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 3000 : 1000));
