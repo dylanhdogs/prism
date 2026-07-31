@@ -8,6 +8,7 @@ type Env = {
   VITE_SUPABASE_ANON_KEY?: string;
   MINDEE_API_KEY?: string;
   MINDEE_RECEIPT_ENDPOINT?: string;
+  MINDEE_MODEL_ID?: string;
   STRIPE_SECRET_KEY?: string;
   APP_URL?: string;
 };
@@ -65,6 +66,8 @@ function normalizeReceiptExtraction(payload: any) {
   const prediction = payload?.document?.inference?.prediction
     || payload?.document?.inference?.result
     || payload?.document?.result
+    || payload?.inference?.result?.fields
+    || payload?.inference?.result
     || payload?.result
     || {};
   const fieldValue = (field: any) => field?.value ?? field?.content ?? field ?? null;
@@ -74,7 +77,7 @@ function normalizeReceiptExtraction(payload: any) {
     const name = fieldValue(fields.description) || fieldValue(fields.product_name) || fieldValue(fields.name) || `Item ${index + 1}`;
     const quantity = parseMoney(fieldValue(fields.quantity)) || 1;
     const unitPrice = parseMoney(fieldValue(fields.unit_price) || fieldValue(fields.unitPrice));
-    const total = parseMoney(fieldValue(fields.total_amount) || fieldValue(fields.total) || fieldValue(fields.amount)) || parseMoney(quantity * unitPrice);
+    const total = parseMoney(fieldValue(fields.total_amount) || fieldValue(fields.total_price) || fieldValue(fields.total) || fieldValue(fields.amount)) || parseMoney(quantity * unitPrice);
     return {
       name: String(name),
       quantity,
@@ -86,7 +89,7 @@ function normalizeReceiptExtraction(payload: any) {
 
   return {
     merchant_name: fieldValue(prediction.merchant_name) || fieldValue(prediction.supplier_name) || null,
-    subtotal_amount: parseMoney(fieldValue(prediction.subtotal) || fieldValue(prediction.subtotal_amount)) || null,
+    subtotal_amount: parseMoney(fieldValue(prediction.subtotal) || fieldValue(prediction.subtotal_amount) || fieldValue(prediction.total_net)) || null,
     tax_amount: parseMoney(fieldValue(prediction.total_tax) || fieldValue(prediction.tax)),
     total_amount: parseMoney(fieldValue(prediction.total_amount) || fieldValue(prediction.total)) || null,
     items,
@@ -101,6 +104,8 @@ async function handleReceiptParse(request: Request, env: Env) {
   if (!user) return unauthorized();
   const mindeeApiKey = env.MINDEE_API_KEY?.trim();
   if (!mindeeApiKey) return Response.json({ error: 'Receipt OCR is not configured yet.' }, { status: 503 });
+  const modelId = env.MINDEE_MODEL_ID?.trim();
+  if (!modelId) return Response.json({ error: 'Receipt OCR needs MINDEE_MODEL_ID. Copy the Receipt model ID from Mindee and add it as a Cloudflare secret or variable.' }, { status: 503 });
 
   const form = await request.formData();
   const expenseId = String(form.get('expenseId') || '');
@@ -109,22 +114,38 @@ async function handleReceiptParse(request: Request, env: Env) {
   if (!(await isExpenseOwner(expenseId, user.id, request, env))) return Response.json({ error: 'Only the receipt owner can extract this receipt.' }, { status: 403 });
 
   const body = new FormData();
-  body.append('document', file, file.name);
-  const endpoint = env.MINDEE_RECEIPT_ENDPOINT || 'https://api.mindee.net/v1/products/mindee/expense_receipts/v3/predict';
+  body.append('model_id', modelId);
+  body.append('file', file, file.name);
+  const endpoint = env.MINDEE_RECEIPT_ENDPOINT || 'https://api-v2.mindee.net/v2/inferences/enqueue';
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: { Authorization: `Token ${mindeeApiKey}` },
+    headers: { Authorization: mindeeApiKey },
     body,
   });
-  const payload = await response.json().catch(() => null);
+  let payload = await response.json().catch(() => null);
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
       const upstreamMessage = payload?.api_request?.error?.details || payload?.api_request?.error?.message;
-      return Response.json({ error: `Mindee rejected the OCR request (${response.status}). ${upstreamMessage || 'Check that MINDEE_API_KEY is an active Mindee API token and that the receipt product is enabled.'}` }, { status: 502 });
+      return Response.json({ error: `Mindee rejected the OCR request (${response.status}). ${upstreamMessage || 'Check that MINDEE_API_KEY is an active Mindee V2 API key and that MINDEE_MODEL_ID is valid.'}` }, { status: 502 });
     }
     return Response.json({ error: payload?.api_request?.error?.message || 'Receipt OCR failed.' }, { status: 502 });
   }
-  return Response.json(normalizeReceiptExtraction(payload));
+
+  let resultUrl = payload?.job?.result_url || null;
+  const pollingUrl = payload?.job?.polling_url || null;
+  for (let attempt = 0; pollingUrl && !resultUrl && attempt < 20; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const pollResponse = await fetch(pollingUrl, { headers: { Authorization: mindeeApiKey } });
+    payload = await pollResponse.json().catch(() => null);
+    if (!pollResponse.ok) return Response.json({ error: 'Mindee OCR polling failed.' }, { status: 502 });
+    resultUrl = payload?.job?.result_url || null;
+    if (payload?.job?.error) return Response.json({ error: payload.job.error.detail || 'Mindee could not read this receipt.' }, { status: 502 });
+  }
+  if (!resultUrl) return Response.json({ error: 'Mindee OCR timed out. Please try again or enter the line items manually.' }, { status: 504 });
+  const resultResponse = await fetch(resultUrl, { headers: { Authorization: mindeeApiKey } });
+  const resultPayload = await resultResponse.json().catch(() => null);
+  if (!resultResponse.ok) return Response.json({ error: 'Mindee OCR result retrieval failed.' }, { status: 502 });
+  return Response.json(normalizeReceiptExtraction(resultPayload));
 }
 
 async function supabaseUserRequest(path: string, request: Request, env: Env, init: RequestInit = {}) {
