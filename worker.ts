@@ -116,7 +116,12 @@ async function handleReceiptParse(request: Request, env: Env) {
     body,
   });
   const payload = await response.json().catch(() => null);
-  if (!response.ok) return Response.json({ error: payload?.api_request?.error?.message || 'Receipt OCR failed.' }, { status: 502 });
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      return Response.json({ error: 'Mindee rejected the OCR API key. Replace MINDEE_API_KEY with the API token from Mindee and redeploy.' }, { status: 502 });
+    }
+    return Response.json({ error: payload?.api_request?.error?.message || 'Receipt OCR failed.' }, { status: 502 });
+  }
   return Response.json(normalizeReceiptExtraction(payload));
 }
 
