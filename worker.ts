@@ -99,7 +99,8 @@ async function handleReceiptParse(request: Request, env: Env) {
   if (!supabase.url || !supabase.anonKey) return Response.json({ error: 'Worker Supabase configuration is missing.' }, { status: 503 });
   const user = await getAuthenticatedUser(request, env);
   if (!user) return unauthorized();
-  if (!env.MINDEE_API_KEY) return Response.json({ error: 'Receipt OCR is not configured yet.' }, { status: 503 });
+  const mindeeApiKey = env.MINDEE_API_KEY?.trim();
+  if (!mindeeApiKey) return Response.json({ error: 'Receipt OCR is not configured yet.' }, { status: 503 });
 
   const form = await request.formData();
   const expenseId = String(form.get('expenseId') || '');
@@ -112,13 +113,14 @@ async function handleReceiptParse(request: Request, env: Env) {
   const endpoint = env.MINDEE_RECEIPT_ENDPOINT || 'https://api.mindee.net/v1/products/mindee/expense_receipts/v3/predict';
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: { Authorization: `Token ${env.MINDEE_API_KEY}` },
+    headers: { Authorization: `Token ${mindeeApiKey}` },
     body,
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      return Response.json({ error: 'Mindee rejected the OCR API key. Replace MINDEE_API_KEY with the API token from Mindee and redeploy.' }, { status: 502 });
+      const upstreamMessage = payload?.api_request?.error?.details || payload?.api_request?.error?.message;
+      return Response.json({ error: `Mindee rejected the OCR request (${response.status}). ${upstreamMessage || 'Check that MINDEE_API_KEY is an active Mindee API token and that the receipt product is enabled.'}` }, { status: 502 });
     }
     return Response.json({ error: payload?.api_request?.error?.message || 'Receipt OCR failed.' }, { status: 502 });
   }
