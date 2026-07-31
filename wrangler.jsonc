@@ -16,6 +16,8 @@
   "vars": {
     "APP_URL": "https://prismbudgeting.com",
     "SITE_URL": "https://prismbudgeting.com",
-    "RESEND_FROM_EMAIL": "Prism <noreply@prismbudgeting.com>"
+    "RESEND_FROM_EMAIL": "Prism <noreply@prismbudgeting.com>",
+    "MINDEE_MODEL_ID": "78e2d992-e6ff-4d2f-bd7d-395d90ce3de9",
+    "MINDEE_RECEIPT_ENDPOINT": "https://api-v2.mindee.net/v2/inferences/enqueue"
   }
 }
