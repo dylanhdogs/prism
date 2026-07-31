@@ -19,8 +19,12 @@ function getSupabaseConfig(env: Env) {
   };
 }
 
+function getSupabaseAuthorization(request: Request) {
+  return request.headers.get('Authorization') || request.headers.get('X-Supabase-Access-Token');
+}
+
 async function getAuthenticatedUser(request: Request, env: Env) {
-  const authorization = request.headers.get('Authorization');
+  const authorization = getSupabaseAuthorization(request);
   const supabase = getSupabaseConfig(env);
   if (!authorization || !supabase.url || !supabase.anonKey) return null;
   const response = await fetch(`${supabase.url}/auth/v1/user`, {
@@ -91,6 +95,8 @@ function normalizeReceiptExtraction(payload: any) {
 }
 
 async function handleReceiptParse(request: Request, env: Env) {
+  const supabase = getSupabaseConfig(env);
+  if (!supabase.url || !supabase.anonKey) return Response.json({ error: 'Worker Supabase configuration is missing.' }, { status: 503 });
   const user = await getAuthenticatedUser(request, env);
   if (!user) return unauthorized();
   if (!env.MINDEE_API_KEY) return Response.json({ error: 'Receipt OCR is not configured yet.' }, { status: 503 });
@@ -116,7 +122,7 @@ async function handleReceiptParse(request: Request, env: Env) {
 
 async function supabaseUserRequest(path: string, request: Request, env: Env, init: RequestInit = {}) {
   const supabase = getSupabaseConfig(env);
-  const authorization = request.headers.get('Authorization') || '';
+  const authorization = getSupabaseAuthorization(request) || '';
   return fetch(`${supabase.url}${path}`, {
     ...init,
     headers: {

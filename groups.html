@@ -1287,7 +1287,10 @@
         form.append('file', await fileResponse.blob(), currentReceiptWorkspace.receipt.file_name || 'receipt');
         const response = await fetch('/api/receipt/parse', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${sessionResult.data.access_token}` },
+          headers: {
+            Authorization: `Bearer ${sessionResult.data.access_token}`,
+            'X-Supabase-Access-Token': `Bearer ${sessionResult.data.access_token}`,
+          },
           body: form,
         });
         const payload = await response.json().catch(() => null);
